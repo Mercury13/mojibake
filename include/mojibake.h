@@ -44,7 +44,7 @@ namespace mojibake {
     ///               private-use, non-character
     ///         [-] it is bad: surrogate, too high
     ///
-    inline bool isGood(char32_t cp)
+    inline bool isGood(char32_t cp) noexcept
     {
         return (cp < SURROGATE_MIN
                 || (cp > SURROGATE_MAX && cp <= UNICODE_MAX));
