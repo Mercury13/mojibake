@@ -97,6 +97,7 @@ namespace detail {
     {
     public:
         static inline void put(It& it, char32_t cp)
+            noexcept (noexcept(*it = cp) && noexcept (++it))
         {
             *it = cp;
             ++it;
@@ -107,13 +108,15 @@ namespace detail {
     class ItEnc<It, enc::Utf16>
     {
     public:
-        static void put(It& it, char32_t cp);
+        static void put(It& it, char32_t cp)
+                noexcept (noexcept(*it = cp) && noexcept (++it));
     };
 
     template <class It>
     void ItEnc<It, enc::Utf16>::put(It& it, char32_t cp)
+            noexcept (noexcept(*it = cp) && noexcept (++it))
     {
-        if (cp < U16_2WORD_MIN) {  // 1 word
+        if (cp < U16_2WORD_MIN) {   // 1 word
             *(it) = static_cast<wchar_t>(cp);
             ++it;
         } else if (cp <= U16_2WORD_MAX) {    // 2 words
