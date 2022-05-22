@@ -40,8 +40,20 @@ namespace mojibake {
     #include "internal/detail.hpp"
 
     ///
+    /// @return [+] codepoint is good: allocated, unallocated, reserved,
+    ///               private-use, non-character
+    ///         [-] it is bad: surrogate, too high
+    ///
+    inline bool isGood(char32_t cp)
+    {
+        return (cp < SURROGATE_MIN
+                || (cp > SURROGATE_MAX && cp <= UNICODE_MAX));
+    }
+
+    ///
     /// Puts code point to some iterator
-    /// @tparam
+    /// @tparam  It   iterator
+    /// @tparam  Enc  enc::Utf8, enc::Utf16, etc::Utf32
     /// @param [in,out]  it   iterator
     /// @param [in]      cp   code point, SHOULD BE GOOD
     /// @warning  Bhv on bad cp is implementation-specific
