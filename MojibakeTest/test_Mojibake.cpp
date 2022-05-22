@@ -182,3 +182,22 @@ TEST (Put, Wchar)
 }
 
 
+///
+///  Simple runnability of UTF-8 mojibake::put
+///
+TEST (Put, Simple8)
+{
+    char c[30];
+    char* start = c;
+    char* it = start;
+    mojibake::put(it, 'a');
+    mojibake::put(it, 'b');
+    mojibake::put(it, 'c');
+    mojibake::put(it, 0x40B);       // 2-byte cp
+    mojibake::put(it, 0x1234);      // 3-byte cp
+    mojibake::put(it, 0x12345);     // 4-byte cp
+
+    std::basic_string_view sv(start, it - start);
+    EXPECT_EQ(12u, sv.length());
+    EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", sv);
+}

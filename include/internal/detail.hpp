@@ -131,4 +131,38 @@ namespace detail {
         }
     }
 
+    template <class It>
+    class ItEnc<It, enc::Utf8>
+    {
+    public:
+        static void put(It& it, char32_t cp)
+                noexcept (noexcept(*it = cp) && noexcept (++it));
+    };
+
+    template <class It>
+    void ItEnc<It, enc::Utf8>::put(It& it, char32_t cp)
+            noexcept (noexcept(*it = cp) && noexcept (++it))
+    {
+        if (cp <= U8_2BYTE_MAX) {  // 1 or 2 bytes, the most frequent case
+            if (cp <= U8_1BYTE_MAX) {  // 1 byte
+                *it = cp;  ++it;
+            } else { // 2 bytes
+                *it     = (cp >> 6)   | 0xC0;
+                *(++it) = (cp & 0x3F) | 0x80;  ++it;
+            }
+        } else {  // 3 or 4 bytes
+            if (cp <= U8_3BYTE_MAX) {  // 3 bytes
+                *it     =  (cp >> 12)        | 0xE0;
+                *(++it) = ((cp >> 6) & 0x3F) | 0x80;
+                *(++it) =  (cp       & 0x3F) | 0x80;  ++it;
+            } else {    // 4 bytes
+                *it     = ((cp >> 18) & 0x07) | 0xF0;
+                *(++it) = ((cp >> 12) & 0x3F) | 0x80;
+                *(++it) = ((cp >> 6)  & 0x3F) | 0x80;
+                *(++it) =  (cp        & 0x3F) | 0x80; ++it;
+            }
+        }
+    }
+
+
 }   // namespace detail
