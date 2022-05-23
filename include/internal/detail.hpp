@@ -355,8 +355,7 @@ namespace detail {
             char32_t cp;
             static_assert(std::numeric_limits<unsigned char>::radix == 2);
             static_assert(std::numeric_limits<unsigned char>::digits == 8);
-            auto c1 = count1(byte1);
-            switch (c1) {
+            switch (count1(byte1)) {
             case 0:  // 0###.#### = 1 byte
                 ItEnc<It2, Enc2>::put(dest, byte1);
                 break;
