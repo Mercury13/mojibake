@@ -201,3 +201,25 @@ TEST (Put, Simple8)
     EXPECT_EQ(12u, sv.length());
     EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", sv);
 }
+
+
+///
+///  Simple runnability of UTF-8 mojibake::put
+///
+TEST (Put, CallIterator)
+{
+    std::string s;
+
+    auto func = [&s](auto c) { s.push_back(c); };
+    mojibake::Utf8CallIterator it(func);
+
+    mojibake::put(it, 'a');
+    mojibake::put(it, 'b');
+    mojibake::put(it, 'c');
+    mojibake::put(it, 0x40B);       // 2-byte cp
+    mojibake::put(it, 0x1234);      // 3-byte cp
+    mojibake::put(it, 0x12345);     // 4-byte cp
+
+    EXPECT_EQ(12u, s.length());
+    EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", s);
+}

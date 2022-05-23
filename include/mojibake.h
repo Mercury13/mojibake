@@ -32,9 +32,9 @@ namespace mojibake {
     constexpr char32_t U16_2WORD_MAX = UNICODE_MAX;
 
     namespace enc {
-        class Utf8 {};
-        class Utf16 {};
-        class Utf32 {};
+        class Utf8  { public: using Ch = char; };
+        class Utf16 { public: using Ch = char16_t; };
+        class Utf32 { public: using Ch = char32_t; };
     }
 
     #include "internal/detail.hpp"
@@ -70,7 +70,104 @@ namespace mojibake {
     inline void put(It& it, char32_t cp)
         { detail::ItEnc<It, Enc>::put(it, cp); }
 
-    template <class To, class From>
-    To to(const From& from);
+    template <class Enc, class Func>
+    class CallIterator
+    {
+    public:
+        using value_type = typename Enc::Ch;
+        CallIterator(const Func& aFunc) noexcept : func(aFunc) {}
+        const CallIterator& operator ++() const noexcept { return *this; }
+        const CallIterator& operator * () const noexcept { return *this; }
+        const CallIterator* operator ->() const noexcept { return this; }
+        void operator = (value_type c) const { func(c); }
+    private:
+        const Func& func;
+    };
+
+    template <class Func>
+    class Utf8CallIterator : public CallIterator<enc::Utf8, Func>
+    {
+    public:
+        using CallIterator<enc::Utf8, Func>::CallIterator;
+    };
+
+    template <class Func>
+    Utf8CallIterator(const Func&) -> Utf8CallIterator<Func>;
+
+    template <class Func>
+    class Utf16CallIterator : public CallIterator<enc::Utf16, Func>
+    {
+    public:
+        using CallIterator<enc::Utf8, Func>::CallIterator;
+    };
+
+    template <class Func>
+    Utf16CallIterator(const Func&) -> Utf16CallIterator<Func>;
+
+    template <class Func>
+    class Utf32CallIterator : public CallIterator<enc::Utf32, Func>
+    {
+    public:
+        using CallIterator<enc::Utf8, Func>::CallIterator;
+    };
+
+    template <class Func>
+    Utf32CallIterator(const Func&) -> Utf32CallIterator<Func>;
+
+//    template <class To, class From>
+//    To to(const From& from);
 
 }   // namespace mojibake
+
+
+namespace std {
+
+    template <class Enc, class Func>
+    class iterator_traits<mojibake::CallIterator<Enc, Func>>
+    {
+    public:
+        using difference_type = int;
+        using CI = typename mojibake::CallIterator<Enc, Func>;
+        using value_type = typename CI::value_type;
+        using pointer = CI*;
+        using reference = CI&;
+        using iterator_category = forward_iterator_tag;
+    };
+
+    template <class Func>
+    class iterator_traits<mojibake::Utf8CallIterator<Func>>
+    {
+    public:
+        using difference_type = int;
+        using CI = typename mojibake::Utf8CallIterator<Func>;
+        using value_type = typename CI::value_type;
+        using pointer = CI*;
+        using reference = CI&;
+        using iterator_category = forward_iterator_tag;
+    };
+
+    template <class Func>
+    class iterator_traits<mojibake::Utf16CallIterator<Func>>
+    {
+    public:
+        using difference_type = int;
+        using CI = typename mojibake::Utf16CallIterator<Func>;
+        using value_type = typename CI::value_type;
+        using pointer = CI*;
+        using reference = CI&;
+        using iterator_category = forward_iterator_tag;
+    };
+
+    template <class Func>
+    class iterator_traits<mojibake::Utf32CallIterator<Func>>
+    {
+    public:
+        using difference_type = int;
+        using CI = typename mojibake::Utf32CallIterator<Func>;
+        using value_type = typename CI::value_type;
+        using pointer = CI*;
+        using reference = CI&;
+        using iterator_category = forward_iterator_tag;
+    };
+
+}   // namespace std
