@@ -19,62 +19,55 @@ namespace detail {
     ///// LenTraits ////////////////////////////////////////////////////////////
 
     template<>
-    class LenTraits<1>
-    {
+    class LenTraits<1> {
     public:
-        using Enc = enc::Utf8;
+        using Enc = Utf8;
     };
 
     template<>
-    class LenTraits<2>
-    {
+    class LenTraits<2> {
     public:
-        using Enc = enc::Utf16;
+        using Enc = Utf16;
     };
 
     template<>
-    class LenTraits<4>
-    {
+    class LenTraits<4> {
     public:
-        using Enc = enc::Utf32;
+        using Enc = Utf32;
     };
 
     template<>
-    class LenTraits<8>
-    {
+    class LenTraits<8> {
     public:
-        using Enc = enc::Utf32;
+        using Enc = Utf32;
     };
 
     ///// UtfTraits ////////////////////////////////////////////////////////////
 
     template<>
-    class UtfTraits<char>
-    {
+    class UtfTraits<char> {
     public:
-        using Enc = enc::Utf8;
+        using Enc = Utf8;
     };
 
     #if __cplusplus >= 202002L
         template<>
-        class UtfTraits<char8_t>
-        {
+        class UtfTraits<char8_t> {
+        public:
             using Enc = enc::Utf8;
         };
     #endif
 
     template<>
-    class UtfTraits<char16_t>
-    {
+    class UtfTraits<char16_t> {
     public:
-        using Enc = enc::Utf16;
+        using Enc = Utf16;
     };
 
     template<>
-    class UtfTraits<char32_t>
-    {
+    class UtfTraits<char32_t> {
     public:
-        using Enc = enc::Utf32;
+        using Enc = Utf32;
     };
 
     template<>
@@ -93,7 +86,7 @@ namespace detail {
     class ItEnc;
 
     template <class It>
-    class ItEnc<It, enc::Utf32>
+    class ItEnc<It, Utf32>
     {
     public:
         static inline void put(It& it, char32_t cp)
@@ -108,7 +101,7 @@ namespace detail {
     };
 
     template <class It> template <class It2, class Enc2, class Mjh>
-    inline It2 ItEnc<It, enc::Utf32>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
+    inline It2 ItEnc<It, Utf32>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
     {
         for (; p != end; ++p) {
             char32_t c = *p;
@@ -122,7 +115,7 @@ namespace detail {
     }
 
     template <class It>
-    class ItEnc<It, enc::Utf16>
+    class ItEnc<It, Utf16>
     {
     public:
         static void put(It& it, char32_t cp)
@@ -130,7 +123,7 @@ namespace detail {
     };
 
     template <class It>
-    void ItEnc<It, enc::Utf16>::put(It& it, char32_t cp)
+    void ItEnc<It, Utf16>::put(It& it, char32_t cp)
             noexcept (noexcept(*it = cp) && noexcept (++it))
     {
         if (cp < U16_2WORD_MIN) {   // 1 word
@@ -149,7 +142,7 @@ namespace detail {
     }
 
     template <class It>
-    class ItEnc<It, enc::Utf8>
+    class ItEnc<It, Utf8>
     {
     public:
         static void put(It& it, char32_t cp)
@@ -157,7 +150,7 @@ namespace detail {
     };
 
     template <class It>
-    void ItEnc<It, enc::Utf8>::put(It& it, char32_t cp)
+    void ItEnc<It, Utf8>::put(It& it, char32_t cp)
             noexcept (noexcept(*it = cp) && noexcept (++it))
     {
         if (cp <= U8_2BYTE_MAX) {  // 1 or 2 bytes, the most frequent case

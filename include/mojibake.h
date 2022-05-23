@@ -31,11 +31,9 @@ namespace mojibake {
     constexpr char32_t U16_2WORD_MIN = 0x10000;
     constexpr char32_t U16_2WORD_MAX = UNICODE_MAX;
 
-    namespace enc {
-        class Utf8  { public: using Ch = char; };
-        class Utf16 { public: using Ch = char16_t; };
-        class Utf32 { public: using Ch = char32_t; };
-    }
+    class Utf8  { public: using Ch = char; };
+    class Utf16 { public: using Ch = char16_t; };
+    class Utf32 { public: using Ch = char32_t; };
 
     ///
     /// @return [+] codepoint is good: allocated, unallocated, reserved,
@@ -49,6 +47,18 @@ namespace mojibake {
     }
 
     #include "internal/detail.hpp"
+
+    namespace handler {
+
+        template <class It>
+        class Skip {
+        public:
+            inline void operator () (
+                    [[maybe_unused]] It cpStart,
+                    [[maybe_unused]] It badPlace) const noexcept {}
+        };  // class Skip
+
+    }   // namespace handler
 
     ///
     /// Copies data to another,
@@ -119,30 +129,30 @@ namespace mojibake {
     };
 
     template <class Func>
-    class Utf8CallIterator : public CallIterator<enc::Utf8, Func>
+    class Utf8CallIterator : public CallIterator<Utf8, Func>
     {
     public:
-        using CallIterator<enc::Utf8, Func>::CallIterator;
+        using CallIterator<Utf8, Func>::CallIterator;
     };
 
     template <class Func>
     Utf8CallIterator(const Func&) -> Utf8CallIterator<Func>;
 
     template <class Func>
-    class Utf16CallIterator : public CallIterator<enc::Utf16, Func>
+    class Utf16CallIterator : public CallIterator<Utf16, Func>
     {
     public:
-        using CallIterator<enc::Utf8, Func>::CallIterator;
+        using CallIterator<Utf8, Func>::CallIterator;
     };
 
     template <class Func>
     Utf16CallIterator(const Func&) -> Utf16CallIterator<Func>;
 
     template <class Func>
-    class Utf32CallIterator : public CallIterator<enc::Utf32, Func>
+    class Utf32CallIterator : public CallIterator<Utf32, Func>
     {
     public:
-        using CallIterator<enc::Utf8, Func>::CallIterator;
+        using CallIterator<Utf8, Func>::CallIterator;
     };
 
     template <class Func>

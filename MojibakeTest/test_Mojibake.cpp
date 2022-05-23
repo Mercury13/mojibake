@@ -61,7 +61,7 @@ TEST (Put, WrongEnc)
     char16_t* start = c;
     char16_t* it = start;
     using It = decltype(it);
-    using Enc = mojibake::enc::Utf32;
+    using Enc = mojibake::Utf32;
     mojibake::put<It, Enc>(it, 'a');
     mojibake::put<It, Enc>(it, 'b');
     mojibake::put<It, Enc>(it, 'c');
@@ -82,7 +82,7 @@ TEST (Put, WrongEnc2)
     char* start = c;
     char* it = start;
     using It = decltype(it);
-    using Enc = mojibake::enc::Utf32;
+    using Enc = mojibake::Utf32;
     mojibake::put<It, Enc>(it, 'a');
     mojibake::put<It, Enc>(it, 'b');
     mojibake::put<It, Enc>(it, 'c');
@@ -102,7 +102,7 @@ TEST (Put, ReverseEnc)
     char c[30];
     char* start = c;
     char* it = start;
-    using Enc = mojibake::enc::Utf32;
+    using Enc = mojibake::Utf32;
     mojibake::put<Enc>(it, 'a');
     mojibake::put<Enc>(it, 'b');
     mojibake::put<Enc>(it, 'c');
@@ -123,7 +123,7 @@ TEST (Put, ReverseEnc2)
     char* start = c;
     char* it = start;
     using It = decltype(it);
-    using Enc = mojibake::enc::Utf32;
+    using Enc = mojibake::Utf32;
     mojibake::put<Enc, It>(it, 'a');
     mojibake::put<Enc, It>(it, 'b');
     mojibake::put<Enc, It>(it, 'c');
@@ -222,4 +222,22 @@ TEST (Put, CallIterator)
 
     EXPECT_EQ(12u, s.length());
     EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", s);
+}
+
+
+/////
+/////  mojibake::copy //////////////////////////////////////////////////////////
+/////
+
+///
+///
+///
+TEST (Vopy, Utf32Normal)
+{
+    std::u32string_view s = U"abc\u040B\u1234\U00012345";
+    char buf[30];
+    using NoM = mojibake::handler::Skip<std::u32string_view::const_iterator>;
+    auto end = mojibake::copy(s.begin(), s.end(), buf, NoM());
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
 }
