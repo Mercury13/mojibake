@@ -66,7 +66,7 @@ namespace mojibake {
         ///   • incomplete CP between two good = EXACTLY ONE mojibake
         ///
         template <class It>
-        class Skip {
+        class Skip final {
         public:
             inline char32_t operator () (
                     [[maybe_unused]] It cpStart,
@@ -74,7 +74,7 @@ namespace mojibake {
         };  // class Skip
 
         template <class It>
-        class Moji {
+        class Moji final {
         public:
             inline char32_t operator () (
                     [[maybe_unused]] It cpStart,
@@ -82,7 +82,7 @@ namespace mojibake {
         };  // class Skip
 
         template <class It>
-        class MojiHalt {
+        class MojiHalt final {
         public:
             inline char32_t operator () (
                     [[maybe_unused]] It cpStart,

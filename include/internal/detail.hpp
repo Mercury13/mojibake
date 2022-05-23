@@ -110,7 +110,7 @@ namespace detail {
 
     /// @return [+] halt
     template <class Enc2, class It1, class It2, class Mjh>
-    inline bool handleMojibake(It1 start, It1 bad, It2& dest, const Mjh& onMojibake)
+    bool handleMojibake(It1 start, It1 bad, It2& dest, const Mjh& onMojibake)
     {
         auto result = onMojibake(start, bad);
         bool halt = result & handler::FG_HALT;
@@ -118,6 +118,22 @@ namespace detail {
         if (result != handler::RET_SKIP)
             ItEnc<It2, Enc2>::put(dest, result);
         return halt;
+    }
+
+    template <class Enc2, class It1, class It2>
+    inline bool handleMojibake(
+            It1 start, It1 bad, It2& dest,
+            const typename handler::Skip<It1>& onMojibake) noexcept
+        { return false; }
+
+    template <class Enc2, class It1, class It2>
+    inline bool handleMojibake(
+            It1 start, It1 bad, It2& dest,
+            const typename handler::Moji<It1>& onMojibake) noexcept
+    {
+        auto result = onMojibake(start, bad);
+        ItEnc<It2, Enc2>::put(dest, result);
+        return false;
     }
 
     template <class It> template <class It2, class Enc2, class Mjh>
