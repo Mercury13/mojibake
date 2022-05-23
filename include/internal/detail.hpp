@@ -145,6 +145,24 @@ namespace detail {
         static inline It2 copy(It p, It end, It2 dest, const Mjh& onMojibake);
     };
 
+    template <class It>
+    void ItEnc<It, Utf16>::put(It& it, char32_t cp)
+            noexcept (noexcept(*it = cp) && noexcept (++it))
+    {
+        if (cp < U16_2WORD_MIN) CPP20_LIKELY {   // 1 word
+            *(it) = static_cast<wchar_t>(cp);
+            ++it;
+        } else if (cp <= U16_2WORD_MAX) CPP20_UNLIKELY { // 2 words
+            cp -= U16_2WORD_MIN;
+            const wchar_t lo10 = cp & 0x3FF;
+            const wchar_t hi10 = cp >> 10;
+            *it = static_cast<wchar_t>(0xD800 | hi10);
+            ++it;
+            *it = static_cast<wchar_t>(0xDC00 | lo10);
+            ++it;
+        }
+    }
+
     template <class It> template <class It2, class Enc2, class Mjh>
     inline It2 ItEnc<It, Utf16>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
     {
@@ -185,29 +203,13 @@ namespace detail {
     }
 
     template <class It>
-    void ItEnc<It, Utf16>::put(It& it, char32_t cp)
-            noexcept (noexcept(*it = cp) && noexcept (++it))
-    {
-        if (cp < U16_2WORD_MIN) CPP20_LIKELY {   // 1 word
-            *(it) = static_cast<wchar_t>(cp);
-            ++it;
-        } else if (cp <= U16_2WORD_MAX) CPP20_UNLIKELY { // 2 words
-            cp -= U16_2WORD_MIN;
-            const wchar_t lo10 = cp & 0x3FF;
-            const wchar_t hi10 = cp >> 10;
-            *it = static_cast<wchar_t>(0xD800 | hi10);
-            ++it;
-            *it = static_cast<wchar_t>(0xDC00 | lo10);
-            ++it;
-        }
-    }
-
-    template <class It>
     class ItEnc<It, Utf8>
     {
     public:
         static void put(It& it, char32_t cp)
                 noexcept (noexcept(*it = cp) && noexcept (++it));
+        template <class It2, class Enc2, class Mjh>
+        static inline It2 copy(It p, It end, It2 dest, const Mjh& onMojibake);
     };
 
     template <class It>
@@ -235,5 +237,9 @@ namespace detail {
         }
     }
 
+    template <class It> template <class It2, class Enc2, class Mjh>
+    inline It2 ItEnc<It, Utf8>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
+    {
+    }
 
 }   // namespace detail
