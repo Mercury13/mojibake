@@ -37,8 +37,6 @@ namespace mojibake {
         class Utf32 { public: using Ch = char32_t; };
     }
 
-    #include "internal/detail.hpp"
-
     ///
     /// @return [+] codepoint is good: allocated, unallocated, reserved,
     ///               private-use, non-character
@@ -48,6 +46,39 @@ namespace mojibake {
     {
         return (cp < SURROGATE_MIN
                 || (cp > SURROGATE_MAX && cp <= UNICODE_MAX));
+    }
+
+    #include "internal/detail.hpp"
+
+    ///
+    /// Copies data to another,
+    /// REACTING APPROPRIATELY TO MOJIBAKE
+    ///
+    template <class It1, class It2,
+              class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
+              class Enc2 = typename detail::ItUtfTraits<It2>::Enc,
+              class Mjh,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copy(It1 beg, It1 end, It2 dest, const Mjh& onMojibake = Mjh{})
+    {
+        return detail::ItEnc<It1, Enc1>::template copy<It2, Enc2, Mjh>(beg, end, dest, onMojibake);
+    }
+
+    template <class Enc1, class Enc2,  class Mjh, class It1, class It2,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copy(It1 beg, It1 end, It2 dest, const Mjh& onMojibake = Mjh{})
+    {
+        return copy<It1, It2, Enc1, Enc2, Mjh>(beg, end, dest, onMojibake);
+    }
+
+    template <class Enc2, class Mjh, class It1, class It2, class Enc1,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copy(It1 beg, It1 end, It2 dest, const Mjh& onMojibake = Mjh{})
+    {
+        return copy<It1, It2, Enc1, Enc2, Mjh>(beg, end, dest, onMojibake);
     }
 
     ///

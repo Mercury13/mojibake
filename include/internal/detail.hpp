@@ -102,7 +102,24 @@ namespace detail {
             *it = cp;
             ++it;
         }
+
+        template <class It2, class Enc2, class Mjh>
+        static inline It2 copy(It p, It end, It2 dest, const Mjh& onMojibake);
     };
+
+    template <class It> template <class It2, class Enc2, class Mjh>
+    inline It2 ItEnc<It, enc::Utf32>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
+    {
+        for (; p != end; ++p) {
+            char32_t c = *p;
+            if (mojibake::isValid(c)) {
+                ItEnc<It2, Enc2>::put(dest, c);
+            } else {
+                onMojibake(p, p);
+            }
+        }
+        return dest;
+    }
 
     template <class It>
     class ItEnc<It, enc::Utf16>
