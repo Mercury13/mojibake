@@ -463,3 +463,27 @@ TEST (CopyMH, Utf32Bad)
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ("abc" "\xD0\x8B" "\xEF\xBF\xBD", r);
 }
+
+
+///
+/// Bad UTF-16
+///
+TEST (CopyMH, Utf16Bad)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyMH(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("a" "\xEF\xBF\xBD", r);
+}
