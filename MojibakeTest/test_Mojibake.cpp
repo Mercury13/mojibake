@@ -10,7 +10,7 @@
 /////
 
 
-TEST (IsGood, Simple)
+TEST (IsValid, Simple)
 {
     EXPECT_TRUE (mojibake::isValid(0));
     EXPECT_TRUE (mojibake::isValid(1000));
