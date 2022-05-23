@@ -1,6 +1,6 @@
 #pragma once
 
-#if __cplusplus >= 2020002L
+#if __cplusplus >= 202002L
     #define CPP20_LIKELY [[likely]]
     #define CPP20_UNLIKELY [[likely]]
 #else
@@ -9,6 +9,7 @@
 #endif
 
 #include <iterator> // won’t be included actually
+#include <limits>   // won’t be included actually
 
 namespace detail {
 
@@ -290,7 +291,7 @@ namespace detail {
                 *it     = (cp >> 6)   | 0xC0;
                 *(++it) = (cp & 0x3F) | 0x80;  ++it;
             }
-        } else CPP20_UNLIKELY {  // 3 or 4 bytes
+        } else {  // 3 or 4 bytes
             if (cp <= U8_3BYTE_MAX) {  // 3 bytes
                 *it     =  (cp >> 12)        | 0xE0;
                 *(++it) = ((cp >> 6) & 0x3F) | 0x80;
@@ -304,9 +305,105 @@ namespace detail {
         }
     }
 
+    constexpr int fallbackCount1(unsigned char x)
+    {
+        static_assert(std::numeric_limits<unsigned char>::max() == 255);
+#define ROW(x) x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x
+        constexpr char table[256] = {
+            ROW(0), ROW(0), ROW(0), ROW(0),
+            ROW(0), ROW(0), ROW(0), ROW(0),
+            ROW(1), ROW(1), ROW(1), ROW(1),
+            ROW(2), ROW(2), ROW(3),
+            4,4,4,4, 4,4,4,4, 5,5,5,5, 6,6,7,8
+        };
+#undef ROW
+        return table[x];
+    }
+
+#if __cplusplus >= 202002L
+    // C++20: use standard bit library
+    constexpr int count0(unsigned char x)
+        { return std::countl_zero(x); }
+#elif defined(__GNUC__) || defined (__clang__)
+    // G++/clang: re-implement using __builtin_clz; exists long ago
+    constexpr int count1(unsigned char x)
+    {
+        constexpr auto ndInt  = std::numeric_limits<unsigned int> ::digits;
+        constexpr auto ndChar = std::numeric_limits<unsigned char>::digits;
+        constexpr auto diff = ndInt - ndChar;
+        return __builtin_clz(x ^ 0xFF) - diff;
+    }
+#else
+    // Fallback
+    constexpr int count1(unsigned char x)
+        { return fallbackCount1(x); }
+#endif
+
     template <class It> template <class It2, class Enc2, class Mjh>
     inline It2 ItEnc<It, Utf8>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
     {
+    #define MJ_READCP \
+                if (p == end) goto endedCp; \
+                byte2 = *p;  \
+                if ((byte2 & 0xC0) != 0x80) goto endedCp; \
+                ++p;
+
+        for (; p != end;) {
+            auto cpStart = p++;
+            unsigned char byte1 = *cpStart;
+            unsigned char byte2;
+            char32_t cp;
+            static_assert(std::numeric_limits<unsigned char>::radix == 2);
+            static_assert(std::numeric_limits<unsigned char>::digits == 8);
+            auto c1 = count1(byte1);
+            switch (c1) {
+            case 0:  // 0###.#### = 1 byte
+                ItEnc<It2, Enc2>::put(dest, byte1);
+                break;
+            case 1: CPP20_UNLIKELY { // 10##.####  cannot be here
+                    if (handleMojibake<Enc2>(cpStart, cpStart, dest, onMojibake))
+                        goto brk;
+                    /// @todo [urgent] skip 10##.####
+                } break;
+            case 2:  // 110#.#### = 2 bytes
+                cp = (byte1 & 0x1F) << 6;
+                MJ_READCP;  cp |= (byte2 & 0x3F);
+                if (cp < U8_2BYTE_MIN)
+                    goto endedCp;
+                ItEnc<It2, Enc2>::put(dest, cp);
+                break;
+            case 3: // 1110.#### = 3 bytes
+                cp = (byte1 & 0x0F) << 12;
+                MJ_READCP;  cp |= ((byte2 & 0x3F) << 6);
+                MJ_READCP;  cp |=  (byte2 & 0x3F);
+                if ((cp >= SURROGATE_MIN && cp <= SURROGATE_MAX) || cp < U8_3BYTE_MIN)
+                    goto endedCp;
+                ItEnc<It2, Enc2>::put(dest, cp);
+                break;
+            case 4: // 1111.0### = 4 bytes
+                cp = (byte1 & 0x07) << 18;
+                MJ_READCP;  cp |= ((byte2 & 0x3F) << 12);
+                MJ_READCP;  cp |= ((byte2 & 0x3F) << 6);
+                MJ_READCP;  cp |=  (byte2 & 0x3F);
+                if (cp < U8_4BYTE_MIN || cp > UNICODE_MAX)
+                    goto endedCp;
+                ItEnc<It2, Enc2>::put(dest, cp);
+                break;
+            default: CPP20_UNLIKELY {
+                    if (handleMojibake<Enc2>(cpStart, cpStart, dest, onMojibake))
+                        goto brk;
+                    /// @todo [urgent] skip 10##.####
+                } break;
+            endedCp: CPP20_UNLIKELY {
+                    if (handleMojibake<Enc2>(cpStart, p, dest, onMojibake))
+                        goto brk;
+                }
+            }   // switch
+        }
+    brk:
+        return dest;
+
+    #undef MJ_READCP
     }
 
 }   // namespace detail

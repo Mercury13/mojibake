@@ -9,6 +9,11 @@
 
 #include <algorithm>
 #include <iterator>
+#include <limits>
+
+#if __cplusplus >= 202002L
+    #include <bit>
+#endif
 
 namespace mojibake {
 

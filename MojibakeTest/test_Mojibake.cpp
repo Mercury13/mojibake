@@ -303,6 +303,19 @@ TEST (Copy, Utf16Bad)
     EXPECT_EQ("abcd", r);
 }
 
+///
+/// Normal UTF-8
+///
+TEST (Copy, Utf8Normal)
+{
+    std::string_view s = "abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85";
+    char32_t buf[30];
+    using NoM = mojibake::handler::Skip<std::string_view::const_iterator>;
+    auto end = mojibake::copy(s.begin(), s.end(), buf, NoM());
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"abc\u040B\u1234\U00012345", r);
+}
+
 
 /////
 /////  mojibake::copyS /////////////////////////////////////////////////////////
