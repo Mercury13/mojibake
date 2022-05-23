@@ -232,12 +232,29 @@ TEST (Put, CallIterator)
 ///
 ///
 ///
-TEST (Vopy, Utf32Normal)
+TEST (Copy, Utf32Normal)
 {
     std::u32string_view s = U"abc\u040B\u1234\U00012345";
     char buf[30];
     using NoM = mojibake::handler::Skip<std::u32string_view::const_iterator>;
     auto end = mojibake::copy(s.begin(), s.end(), buf, NoM());
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
+}
+
+
+/////
+/////  mojibake::copyS /////////////////////////////////////////////////////////
+/////
+
+///
+///
+///
+TEST (CopyS, Utf32Normal)
+{
+    std::u32string_view s = U"abc\u040B\u1234\U00012345";
+    char buf[30];
+    auto end = mojibake::copyS(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
 }

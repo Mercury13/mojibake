@@ -50,15 +50,37 @@ namespace mojibake {
 
     namespace handler {
 
+        ///
         template <class It>
         class Skip {
         public:
-            inline void operator () (
+            inline bool operator () (
                     [[maybe_unused]] It cpStart,
-                    [[maybe_unused]] It badPlace) const noexcept {}
+                    [[maybe_unused]] It badPlace) const noexcept { return false; }
         };  // class Skip
 
     }   // namespace handler
+
+    ///
+    /// Puts code point to some iterator
+    /// @tparam  It   iterator
+    /// @tparam  Enc  enc::Utf8, enc::Utf16, etc::Utf32
+    /// @param [in,out]  it   iterator
+    /// @param [in]      cp   code point, SHOULD BE GOOD
+    /// @warning  Bhv on bad cp is implementation-specific
+    ///
+    template <class It,
+              class Enc = typename detail::ItUtfTraits<It>::Enc,
+              class = std::void_t<typename std::iterator_traits<It>::value_type>>
+    inline void put(It& it, char32_t cp)
+        { detail::ItEnc<It, Enc>::put(it, cp); }
+
+    template <class Enc,
+              class It,
+              class = std::void_t<typename std::iterator_traits<It>::value_type>>
+    inline void put(It& it, char32_t cp)
+        { detail::ItEnc<It, Enc>::put(it, cp); }
+
 
     ///
     /// Copies data to another,
@@ -92,24 +114,35 @@ namespace mojibake {
     }
 
     ///
-    /// Puts code point to some iterator
-    /// @tparam  It   iterator
-    /// @tparam  Enc  enc::Utf8, enc::Utf16, etc::Utf32
-    /// @param [in,out]  it   iterator
-    /// @param [in]      cp   code point, SHOULD BE GOOD
-    /// @warning  Bhv on bad cp is implementation-specific
+    /// Copies data to another, SKIPPING MOJIBAKE
+    /// So mo mojibake handler
     ///
-    template <class It,
-              class Enc = typename detail::ItUtfTraits<It>::Enc,
-              class = std::void_t<typename std::iterator_traits<It>::value_type>>
-    inline void put(It& it, char32_t cp)
-        { detail::ItEnc<It, Enc>::put(it, cp); }
+    template <class It1, class It2,
+              class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
+              class Enc2 = typename detail::ItUtfTraits<It2>::Enc,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyS(It1 beg, It1 end, It2 dest)
+    {
+        using Sk = mojibake::handler::Skip<It1>;
+        return detail::ItEnc<It1, Enc1>::template copy<It2, Enc2, Sk>(beg, end, dest, Sk{});
+    }
 
-    template <class Enc,
-              class It,
-              class = std::void_t<typename std::iterator_traits<It>::value_type>>
-    inline void put(It& it, char32_t cp)
-        { detail::ItEnc<It, Enc>::put(it, cp); }
+    template <class Enc1, class Enc2, class It1, class It2,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyS(It1 beg, It1 end, It2 dest)
+    {
+        return copyS<It1, It2, Enc1, Enc2>(beg, end, dest);
+    }
+
+    template <class Enc2, class It1, class It2, class Enc1,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyS(It1 beg, It1 end, It2 dest)
+    {
+        return copyS<It1, It2, Enc1, Enc2>(beg, end, dest);
+    }
 
     ///
     /// Pseudo-iterator for mojibake::put that calls some functor instead
