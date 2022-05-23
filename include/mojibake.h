@@ -70,6 +70,9 @@ namespace mojibake {
     inline void put(It& it, char32_t cp)
         { detail::ItEnc<It, Enc>::put(it, cp); }
 
+    ///
+    /// Pseudo-iterator for mojibake::put that calls some functor instead
+    ///
     template <class Enc, class Func>
     class CallIterator
     {
