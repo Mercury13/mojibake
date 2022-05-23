@@ -24,6 +24,9 @@ namespace detail {
     template <class It>
     using ItUtfTraits = UtfTraits<ChType<It>>;
 
+    template <class Cont>
+    using ContUtfTraits = UtfTraits<typename Cont::value_type>;
+
     ///// LenTraits ////////////////////////////////////////////////////////////
 
     template<>
@@ -121,9 +124,8 @@ namespace detail {
     }
 
     template <class Enc2, class It1, class It2>
-    inline bool handleMojibake(
-            It1 start, It1 bad, It2& dest,
-            const typename handler::Skip<It1>& onMojibake) noexcept
+    inline bool handleMojibake(It1, It1, It2&,
+            const typename handler::Skip<It1>&) noexcept
         { return false; }
 
     template <class Enc2, class It1, class It2>

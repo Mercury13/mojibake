@@ -239,6 +239,32 @@ namespace mojibake {
     }
 
     ///
+    /// Generic conversion
+    ///
+    template <class To, class From, class Mjh,
+              class Enc2 = typename detail::ContUtfTraits<To>::Enc,
+              class Enc1 = typename detail::ContUtfTraits<From>::Enc>
+    To to(const From& from, const Mjh& onMojibake = Mjh{})
+    {
+        To r;
+        std::back_insert_iterator it(r);
+        using It1 = decltype(std::begin(from));
+        using It2 = decltype(it);
+        copy<It1, It2, Enc1, Enc2, Mjh>(std::begin(from), std::end(from), it, onMojibake);
+        return r;
+    }
+
+    template <class To, class From,
+              class Enc2 = typename detail::ContUtfTraits<To>::Enc,
+              class Enc1 = typename detail::ContUtfTraits<From>::Enc>
+    inline To toS(const From& from)
+    {
+        using It = decltype(std::begin(from));
+        using Sk = mojibake::handler::Skip<It>;
+        return to<To, From, Sk, Enc2, Enc1>(from);
+    }
+
+    ///
     /// Pseudo-iterator for mojibake::put that calls some functor instead
     ///
     template <class Enc, class Func>

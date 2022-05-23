@@ -487,3 +487,31 @@ TEST (CopyMH, Utf16Bad)
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ("a" "\xEF\xBF\xBD", r);
 }
+
+
+/////
+/////  mojibake::toS ///////////////////////////////////////////////////////////
+/////
+/////
+
+
+///
+/// Bad UTF-16
+///
+TEST (toS, Utf16Bad)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    auto r = mojibake::toS<std::string, std::u16string_view>(s);
+    EXPECT_EQ("abcd", r);
+}
