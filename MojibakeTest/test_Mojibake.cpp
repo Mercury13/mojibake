@@ -204,7 +204,7 @@ TEST (Put, Simple8)
 
 
 ///
-///  Simple runnability of UTF-8 mojibake::put
+///  Utf8CallIterator
 ///
 TEST (Put, CallIterator)
 {
