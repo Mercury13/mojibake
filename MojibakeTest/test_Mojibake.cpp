@@ -6,25 +6,25 @@
 
 
 /////
-/////  mojibake::isGood ///////////////////////////////////////////////////////////
+/////  mojibake::isValid ///////////////////////////////////////////////////////
 /////
 
 
 TEST (IsGood, Simple)
 {
-    EXPECT_TRUE (mojibake::isGood(0));
-    EXPECT_TRUE (mojibake::isGood(1000));
-    EXPECT_TRUE (mojibake::isGood(0xD7FF));
-    EXPECT_FALSE(mojibake::isGood(0xD800));
-    EXPECT_FALSE(mojibake::isGood(0xDFFF));
-    EXPECT_TRUE (mojibake::isGood(0xE000));
-    EXPECT_TRUE (mojibake::isGood(0xFFFF));
-    EXPECT_TRUE (mojibake::isGood(0x10000));
-    EXPECT_TRUE (mojibake::isGood(0xFFFFF));
-    EXPECT_TRUE (mojibake::isGood(0x100000));
-    EXPECT_TRUE (mojibake::isGood(0x10FFFF));
-    EXPECT_FALSE(mojibake::isGood(0x110000));
-    EXPECT_FALSE(mojibake::isGood(0x1E0000));
+    EXPECT_TRUE (mojibake::isValid(0));
+    EXPECT_TRUE (mojibake::isValid(1000));
+    EXPECT_TRUE (mojibake::isValid(0xD7FF));
+    EXPECT_FALSE(mojibake::isValid(0xD800));
+    EXPECT_FALSE(mojibake::isValid(0xDFFF));
+    EXPECT_TRUE (mojibake::isValid(0xE000));
+    EXPECT_TRUE (mojibake::isValid(0xFFFF));
+    EXPECT_TRUE (mojibake::isValid(0x10000));
+    EXPECT_TRUE (mojibake::isValid(0xFFFFF));
+    EXPECT_TRUE (mojibake::isValid(0x100000));
+    EXPECT_TRUE (mojibake::isValid(0x10FFFF));
+    EXPECT_FALSE(mojibake::isValid(0x110000));
+    EXPECT_FALSE(mojibake::isValid(0x1E0000));
 }
 
 
