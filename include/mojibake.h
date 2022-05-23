@@ -61,7 +61,7 @@ namespace mojibake {
         /// Mojibake support varies between serialization types, and…
         /// • [U32] bad codepoint is just replaced with mojibake
         /// • [U8/16] implementation-dependent, but…
-        ///   • [U8] bad codepoint but well-serialized = EXACTLY ONE mojibake
+        ///   • [U8] wrong but well-serialized codepoint = EXACTLY ONE mojibake
         ///   • [U8] long code sequence = EXACTLY ONE mojibake
         ///   • incomplete CP between two good = EXACTLY ONE mojibake
         ///
@@ -79,6 +79,14 @@ namespace mojibake {
             inline char32_t operator () (
                     [[maybe_unused]] It cpStart,
                     [[maybe_unused]] It badPlace) const noexcept { return MOJIBAKE; }
+        };  // class Skip
+
+        template <class It>
+        class MojiHalt {
+        public:
+            inline char32_t operator () (
+                    [[maybe_unused]] It cpStart,
+                    [[maybe_unused]] It badPlace) const noexcept { return MOJIBAKE | FG_HALT; }
         };  // class Skip
 
     }   // namespace handler
@@ -195,6 +203,37 @@ namespace mojibake {
               class = std::void_t<typename std::iterator_traits<It1>::value_type>,
               class = std::void_t<typename std::iterator_traits<It2>::value_type>>
     inline It2 copyM(It1 beg, It1 end, It2 dest)
+    {
+        return copyM<It1, It2, Enc1, Enc2>(beg, end, dest);
+    }
+
+    ///
+    /// Copies data to another, WRITING MOJIBAKE AND HALTING
+    /// So mo mojibake handler
+    ///
+    template <class It1, class It2,
+              class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
+              class Enc2 = typename detail::ItUtfTraits<It2>::Enc,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyMH(It1 beg, It1 end, It2 dest)
+    {
+        using Mh = mojibake::handler::MojiHalt<It1>;
+        return detail::ItEnc<It1, Enc1>::template copy<It2, Enc2, Mh>(beg, end, dest, Mh{});
+    }
+
+    template <class Enc1, class Enc2, class It1, class It2,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyMH(It1 beg, It1 end, It2 dest)
+    {
+        return copyM<It1, It2, Enc1, Enc2>(beg, end, dest);
+    }
+
+    template <class Enc2, class It1, class It2, class Enc1,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyMH(It1 beg, It1 end, It2 dest)
     {
         return copyM<It1, It2, Enc1, Enc2>(beg, end, dest);
     }

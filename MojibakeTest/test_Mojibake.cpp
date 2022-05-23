@@ -339,3 +339,40 @@ TEST (CopyM, Utf32Bad)
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ("abc" "\xEF\xBF\xBD" "\xD0\x8B" "\xEF\xBF\xBD" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
 }
+
+
+/////
+/////  mojibake::copyMH ////////////////////////////////////////////////////////
+/////
+
+///
+/// Normal UTF-32
+///
+TEST (CopyMH, Utf32Normal)
+{
+    std::u32string_view s = U"abc\u040B\u1234\U00012345";
+    char buf[30];
+    auto end = mojibake::copyMH(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
+}
+
+
+///
+/// Bad UTF-32
+///
+TEST (CopyMH, Utf32Bad)
+{
+    std::u32string s = U"abc";
+    s.push_back(0x040B);
+    s.push_back(0x110000);  // Too high
+    s.push_back(0x1234);
+    s.push_back(0x12345);
+
+    EXPECT_EQ(7u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyMH(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("abc" "\xD0\x8B" "\xEF\xBF\xBD", r);
+}

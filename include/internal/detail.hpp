@@ -116,6 +116,7 @@ namespace detail {
             if (mojibake::isValid(c)) CPP20_LIKELY {
                 ItEnc<It2, Enc2>::put(dest, c);
             } else CPP20_UNLIKELY {
+                /// @todo [urgent] handleMojibake
                 auto result = onMojibake(p, p);
                 bool halt = result & handler::FG_HALT;
                 result &= handler::MASK_CODE;
@@ -145,7 +146,6 @@ namespace detail {
             ++it;
         } else if (cp <= U16_2WORD_MAX) CPP20_UNLIKELY { // 2 words
             cp -= U16_2WORD_MIN;
-            // Hi word
             const wchar_t lo10 = cp & 0x3FF;
             const wchar_t hi10 = cp >> 10;
             *it = static_cast<wchar_t>(0xD800 | hi10);
