@@ -108,6 +108,18 @@ namespace detail {
         static inline It2 copy(It p, It end, It2 dest, const Mjh& onMojibake);
     };
 
+    /// @return [+] halt
+    template <class Enc2, class It1, class It2, class Mjh>
+    inline bool handleMojibake(It1 start, It1 bad, It2& dest, const Mjh& onMojibake)
+    {
+        auto result = onMojibake(start, bad);
+        bool halt = result & handler::FG_HALT;
+        result &= handler::MASK_CODE;
+        if (result != handler::RET_SKIP)
+            ItEnc<It2, Enc2>::put(dest, result);
+        return halt;
+    }
+
     template <class It> template <class It2, class Enc2, class Mjh>
     inline It2 ItEnc<It, Utf32>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
     {
@@ -116,13 +128,7 @@ namespace detail {
             if (mojibake::isValid(c)) CPP20_LIKELY {
                 ItEnc<It2, Enc2>::put(dest, c);
             } else CPP20_UNLIKELY {
-                /// @todo [urgent] handleMojibake
-                auto result = onMojibake(p, p);
-                bool halt = result & handler::FG_HALT;
-                result &= handler::MASK_CODE;
-                if (result != handler::RET_SKIP)
-                    ItEnc<It2, Enc2>::put(dest, result);
-                if (halt)
+                if (handleMojibake<Enc2>(p, p, dest, onMojibake))
                     break;
             }
         }
@@ -135,7 +141,48 @@ namespace detail {
     public:
         static void put(It& it, char32_t cp)
                 noexcept (noexcept(*it = cp) && noexcept (++it));
+        template <class It2, class Enc2, class Mjh>
+        static inline It2 copy(It p, It end, It2 dest, const Mjh& onMojibake);
     };
+
+    template <class It> template <class It2, class Enc2, class Mjh>
+    inline It2 ItEnc<It, Utf16>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
+    {
+        for (; p != end;) {
+            auto cpStart = p++;
+            char16_t word1 = *cpStart;
+            if (word1 < SURROGATE_HI_MIN) CPP20_LIKELY {
+                if (word1 < SURROGATE_MIN) { // Low BMP char => OK
+                    ItEnc<It2, Enc2>::put(dest, word1);
+                } else {  // Leading surrogate
+                    if (p == end) CPP20_UNLIKELY {
+                        // Abrupt end
+                        if (handleMojibake<Enc2>(cpStart, p, dest, onMojibake))
+                            break;
+                    } else {
+                        char16_t word2 = *p;
+                        if (word2 < SURROGATE_HI_MIN || word2 > SURROGATE_HI_MAX)
+                        CPP20_UNLIKELY {
+                            if (handleMojibake<Enc2>(cpStart, p, dest, onMojibake))
+                                break;
+                        } else CPP20_LIKELY {
+                            ++p;
+                            char32_t cp = (((word1 & 0x3FF) << 10) | (word2 & 0x3FF)) + 0x10000;
+                            ItEnc<It2, Enc2>::put(dest, cp);
+                        }
+                    }
+                }
+            } else {
+                if (word1 <= SURROGATE_MAX) CPP20_UNLIKELY { // Trailing surrogate
+                    if (handleMojibake<Enc2>(cpStart, cpStart, dest, onMojibake))
+                        break;
+                } else { // High BMP char => OK
+                    ItEnc<It2, Enc2>::put(dest, word1);
+                }
+            }   // big if
+        }   // for
+        return dest;
+    }
 
     template <class It>
     void ItEnc<It, Utf16>::put(It& it, char32_t cp)

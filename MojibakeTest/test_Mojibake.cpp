@@ -265,6 +265,45 @@ TEST (Copy, Utf32Bad)
 }
 
 
+///
+/// Normal UTF-16
+///
+TEST (Copy, Utf16Normal)
+{
+    std::u16string_view s = u"abc\u040B\u1234\U00012345";
+    char buf[30];
+    using NoM = mojibake::handler::Skip<std::u16string_view::const_iterator>;
+    auto end = mojibake::copy(s.begin(), s.end(), buf, NoM());
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
+}
+
+
+///
+/// Bad UTF-16
+///
+TEST (Copy, Utf16Bad)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char buf[30];
+    using NoM = mojibake::handler::Skip<std::u16string::const_iterator>;
+    auto end = mojibake::copy(s.begin(), s.end(), buf, NoM());
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("abcd", r);
+}
+
+
 /////
 /////  mojibake::copyS /////////////////////////////////////////////////////////
 /////
