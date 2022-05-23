@@ -1,5 +1,13 @@
 #pragma once
 
+#if __cplusplus >= 2020002L
+    #define CPP20_LIKELY [[likely]]
+    #define CPP20_UNLIKELY [[likely]]
+#else
+    #define CPP20_LIKELY
+    #define CPP20_UNLIKELY
+#endif
+
 #include <iterator> // won’t be included actually
 
 namespace detail {
@@ -105,10 +113,16 @@ namespace detail {
     {
         for (; p != end; ++p) {
             char32_t c = *p;
-            if (mojibake::isValid(c)) {
+            if (mojibake::isValid(c)) CPP20_LIKELY {
                 ItEnc<It2, Enc2>::put(dest, c);
-            } else {
-                onMojibake(p, p);
+            } else CPP20_UNLIKELY {
+                auto result = onMojibake(p, p);
+                bool halt = result & handler::FG_HALT;
+                result &= handler::MASK_CODE;
+                if (result != handler::RET_SKIP)
+                    ItEnc<It2, Enc2>::put(dest, result);
+                if (halt)
+                    break;
             }
         }
         return dest;
@@ -126,10 +140,10 @@ namespace detail {
     void ItEnc<It, Utf16>::put(It& it, char32_t cp)
             noexcept (noexcept(*it = cp) && noexcept (++it))
     {
-        if (cp < U16_2WORD_MIN) {   // 1 word
+        if (cp < U16_2WORD_MIN) CPP20_LIKELY {   // 1 word
             *(it) = static_cast<wchar_t>(cp);
             ++it;
-        } else if (cp <= U16_2WORD_MAX) {    // 2 words
+        } else if (cp <= U16_2WORD_MAX) CPP20_UNLIKELY { // 2 words
             cp -= U16_2WORD_MIN;
             // Hi word
             const wchar_t lo10 = cp & 0x3FF;
@@ -153,14 +167,14 @@ namespace detail {
     void ItEnc<It, Utf8>::put(It& it, char32_t cp)
             noexcept (noexcept(*it = cp) && noexcept (++it))
     {
-        if (cp <= U8_2BYTE_MAX) {  // 1 or 2 bytes, the most frequent case
+        if (cp <= U8_2BYTE_MAX) CPP20_LIKELY {  // 1 or 2 bytes, the most frequent case
             if (cp <= U8_1BYTE_MAX) {  // 1 byte
                 *it = cp;  ++it;
             } else { // 2 bytes
                 *it     = (cp >> 6)   | 0xC0;
                 *(++it) = (cp & 0x3F) | 0x80;  ++it;
             }
-        } else {  // 3 or 4 bytes
+        } else CPP20_UNLIKELY {  // 3 or 4 bytes
             if (cp <= U8_3BYTE_MAX) {  // 3 bytes
                 *it     =  (cp >> 12)        | 0xE0;
                 *(++it) = ((cp >> 6) & 0x3F) | 0x80;

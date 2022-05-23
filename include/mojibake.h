@@ -46,20 +46,44 @@ namespace mojibake {
                 || (cp > SURROGATE_MAX && cp <= UNICODE_MAX));
     }
 
-    #include "internal/detail.hpp"
-
     namespace handler {
 
+        constexpr char32_t RET_SKIP = 0xFFFFFF;
+        constexpr char32_t FG_HALT = 0x80000000;
+        constexpr char32_t MASK_CODE = 0xFFFFFF;
+        constexpr char32_t RET_HALT = RET_SKIP | FG_HALT;
+
+        ///
+        /// Mojibake handler MUST:
+        /// • accept two params: start of bad CP, and place where it became bad
+        /// • return code point SPECIAL_SKIP, SPECIAL_HALT or valid code point
+        ///
+        /// Mojibake support varies between serialization types, and…
+        /// • [U32] bad codepoint is just replaced with mojibake
+        /// • [U8/16] implementation-dependent, but…
+        ///   • [U8] bad codepoint but well-serialized = EXACTLY ONE mojibake
+        ///   • [U8] long code sequence = EXACTLY ONE mojibake
+        ///   • incomplete CP between two good = EXACTLY ONE mojibake
         ///
         template <class It>
         class Skip {
         public:
-            inline bool operator () (
+            inline char32_t operator () (
                     [[maybe_unused]] It cpStart,
-                    [[maybe_unused]] It badPlace) const noexcept { return false; }
+                    [[maybe_unused]] It badPlace) const noexcept { return RET_SKIP; }
+        };  // class Skip
+
+        template <class It>
+        class Moji {
+        public:
+            inline char32_t operator () (
+                    [[maybe_unused]] It cpStart,
+                    [[maybe_unused]] It badPlace) const noexcept { return MOJIBAKE; }
         };  // class Skip
 
     }   // namespace handler
+
+    #include "internal/detail.hpp"
 
     ///
     /// Puts code point to some iterator
@@ -142,6 +166,37 @@ namespace mojibake {
     inline It2 copyS(It1 beg, It1 end, It2 dest)
     {
         return copyS<It1, It2, Enc1, Enc2>(beg, end, dest);
+    }
+
+    ///
+    /// Copies data to another, WRITING MOJIBAKE
+    /// So mo mojibake handler
+    ///
+    template <class It1, class It2,
+              class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
+              class Enc2 = typename detail::ItUtfTraits<It2>::Enc,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyM(It1 beg, It1 end, It2 dest)
+    {
+        using Mo = mojibake::handler::Moji<It1>;
+        return detail::ItEnc<It1, Enc1>::template copy<It2, Enc2, Mo>(beg, end, dest, Mo{});
+    }
+
+    template <class Enc1, class Enc2, class It1, class It2,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyM(It1 beg, It1 end, It2 dest)
+    {
+        return copyM<It1, It2, Enc1, Enc2>(beg, end, dest);
+    }
+
+    template <class Enc2, class It1, class It2, class Enc1,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyM(It1 beg, It1 end, It2 dest)
+    {
+        return copyM<It1, It2, Enc1, Enc2>(beg, end, dest);
     }
 
     ///
