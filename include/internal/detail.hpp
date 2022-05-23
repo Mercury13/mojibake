@@ -109,6 +109,8 @@ namespace detail {
 
         template <class It2, class Enc2, class Mjh>
         static inline It2 copy(It p, It end, It2 dest, const Mjh& onMojibake);
+
+        static bool isValid(It p, It end);
     };
 
     /// @return [+] halt
@@ -138,6 +140,17 @@ namespace detail {
         return false;
     }
 
+    template <class It>
+    bool ItEnc<It, Utf32>::isValid(It p, It end)
+    {
+        for (; p != end; ++p) {
+            char32_t c = *p;
+            if (!mojibake::isValid(c))
+                return false;
+        }
+        return true;
+    }
+
     template <class It> template <class It2, class Enc2, class Mjh>
     inline It2 ItEnc<It, Utf32>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
     {
@@ -159,8 +172,11 @@ namespace detail {
     public:
         static void put(It& it, char32_t cp)
                 noexcept (noexcept(*it = cp) && noexcept (++it));
+
         template <class It2, class Enc2, class Mjh>
-        static inline It2 copy(It p, It end, It2 dest, const Mjh& onMojibake);
+        static It2 copy(It p, It end, It2 dest, const Mjh& onMojibake);
+
+        static bool isValid(It p, It end);
     };
 
     template <class It>
@@ -182,7 +198,7 @@ namespace detail {
     }
 
     template <class It> template <class It2, class Enc2, class Mjh>
-    inline It2 ItEnc<It, Utf16>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
+    It2 ItEnc<It, Utf16>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
     {
         for (; p != end;) {
             auto cpStart = p++;
@@ -218,6 +234,39 @@ namespace detail {
             }   // big if
         }   // for
         return dest;
+    }
+
+    template <class It>
+    bool ItEnc<It, Utf16>::isValid(It p, It end)
+    {
+        for (; p != end;) {
+            auto cpStart = p++;
+            char16_t word1 = *cpStart;
+            if (word1 < SURROGATE_HI_MIN) CPP20_LIKELY {
+                if (word1 < SURROGATE_MIN) { // Low BMP char => OK
+                    // OK, do nothing
+                } else {  // Leading surrogate
+                    if (p == end) CPP20_UNLIKELY {
+                        return false;
+                    } else {
+                        char16_t word2 = *p;
+                        if (word2 < SURROGATE_HI_MIN || word2 > SURROGATE_HI_MAX)
+                        CPP20_UNLIKELY {
+                            return false;
+                        } else CPP20_LIKELY {
+                            ++p;
+                        }
+                    }
+                }
+            } else {
+                if (word1 <= SURROGATE_MAX) CPP20_UNLIKELY { // Trailing surrogate
+                    return false;
+                } else { // High BMP char => OK
+                    // do nothing
+                }
+            }   // big if
+        }   // for
+        return true;
     }
 
     template <class It>

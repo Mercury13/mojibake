@@ -6,11 +6,11 @@
 
 
 /////
-/////  mojibake::isValid ///////////////////////////////////////////////////////
+/////  mojibake::isCpValid /////////////////////////////////////////////////////
 /////
 
 
-TEST (IsValid, Simple)
+TEST (IsCpValid, Simple)
 {
     EXPECT_TRUE (mojibake::isValid(0));
     EXPECT_TRUE (mojibake::isValid(1000));
@@ -382,6 +382,7 @@ TEST (CopyM, Utf32Normal)
     EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
 }
 
+#define U8_MOJ "\xEF\xBF\xBD"
 
 ///
 /// Bad UTF-32
@@ -400,7 +401,7 @@ TEST (CopyM, Utf32Bad)
     char buf[30];
     auto end = mojibake::copyM(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
-    EXPECT_EQ("abc" "\xEF\xBF\xBD" "\xD0\x8B" "\xEF\xBF\xBD" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
+    EXPECT_EQ("abc" U8_MOJ "\xD0\x8B" U8_MOJ "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
 }
 
 
@@ -424,7 +425,7 @@ TEST (CopyM, Utf16Bad)
     char buf[30];
     auto end = mojibake::copyM(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
-    EXPECT_EQ("a" "\xEF\xBF\xBD" "b" "\xEF\xBF\xBD" "c" "\xEF\xBF\xBD" "\xEF\xBF\xBD" "d", r);
+    EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
 }
 
 
@@ -461,7 +462,7 @@ TEST (CopyMH, Utf32Bad)
     char buf[30];
     auto end = mojibake::copyMH(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
-    EXPECT_EQ("abc" "\xD0\x8B" "\xEF\xBF\xBD", r);
+    EXPECT_EQ("abc" "\xD0\x8B" U8_MOJ, r);
 }
 
 
@@ -485,13 +486,12 @@ TEST (CopyMH, Utf16Bad)
     char buf[30];
     auto end = mojibake::copyMH(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
-    EXPECT_EQ("a" "\xEF\xBF\xBD", r);
+    EXPECT_EQ("a" U8_MOJ, r);
 }
 
 
 /////
 /////  mojibake::toS ///////////////////////////////////////////////////////////
-/////
 /////
 
 
@@ -512,6 +512,136 @@ TEST (toS, Utf16Bad)
 
     EXPECT_EQ(8u, s.length());   // Should contain those chars
 
-    auto r = mojibake::toS<std::string, std::u16string_view>(s);
+    auto r = mojibake::toS<std::string>(s);
     EXPECT_EQ("abcd", r);
+}
+
+
+/////
+/////  mojibake::toM ///////////////////////////////////////////////////////////
+/////
+
+///
+/// Bad UTF-16
+///
+TEST (toM, Utf16Bad)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    auto r = mojibake::toM<std::string>(s);
+    EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
+}
+
+
+/////
+/////  mojibake::isValid ///////////////////////////////////////////////////////
+/////
+
+///
+/// Good UTF-32
+///
+TEST (IsValid, Utf32Good)
+{
+    std::u32string_view s = U"abc\u040B\u1234\U00012345";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// UTF-32, const char* version
+///
+TEST (IsValid, Utf32ConstChar)
+{
+    EXPECT_TRUE(mojibake::isValid(U"abc\u040B\u1234\U00012345"));
+}
+
+
+///
+/// Bad UTF-32
+///
+TEST (IsValid, Utf32Bad)
+{
+    std::u32string s = U"abc";
+    s.push_back(0x040B);
+    s.push_back(0x110000);  // Too high
+    s.push_back(0x1234);
+    s.push_back(0x12345);
+
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// Good UTF-16
+///
+TEST (IsValid, Utf16Good)
+{
+    std::u16string_view s = u"abc\u040B\u1234\U00012345";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// UTF-16, const char* version
+///
+TEST (IsValid, Utf16ConstChar)
+{
+    EXPECT_TRUE(mojibake::isValid(u"abc\u040B\u1234\U00012345"));
+}
+
+
+///
+/// Bad UTF-16: code point abruptly ended
+///
+TEST (IsValid, Utf16Bad_AbruptEnd)
+{
+    std::u16string s = u"abc\u040B";
+    s.push_back(0xD900);    // Lone low surrogate
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// Bad UTF-16: starting cp w/o ending
+///
+TEST (IsValid, Utf16Bad_StartingCp)
+{
+    std::u16string s = u"abc\u040B";
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('1');
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// Bad UTF-16: starting cp w/o ending
+///
+TEST (IsValid, Utf16Bad_DoubleStartingCp)
+{
+    std::u16string s = u"abc\u040B";
+    s.push_back(0xD900);    // Low surrogate
+    s.push_back(0xDA00);    // Another low surrogate
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// This UTF-16 is good :)
+///
+TEST (IsValid, Utf16Good_NormalCp)
+{
+    std::u16string s = u"abc\u040B";
+    s.push_back(0xD900);    // Low surrogate
+    s.push_back(0xDD00);    // High surrogate
+    EXPECT_TRUE(mojibake::isValid(s));
 }

@@ -264,6 +264,55 @@ namespace mojibake {
         return to<To, From, Sk, Enc2, Enc1>(from);
     }
 
+    template <class To, class From,
+              class Enc2 = typename detail::ContUtfTraits<To>::Enc,
+              class Enc1 = typename detail::ContUtfTraits<From>::Enc>
+    inline To toM(const From& from)
+    {
+        using It = decltype(std::begin(from));
+        using Mo = mojibake::handler::Moji<It>;
+        return to<To, From, Mo, Enc2, Enc1>(from);
+    }
+
+    ///
+    /// Check for string validity
+    ///
+    template <class Cont,
+              class Enc = typename detail::ContUtfTraits<Cont>::Enc>
+    bool isValid(const Cont& cont)
+    {
+        using It = decltype(std::begin(cont));
+        return detail::ItEnc<It, Enc>::isValid(std::begin(cont), std::end(cont));
+    }
+
+    template <class Enc = Utf32>
+    inline bool isValid(const char32_t* x)
+    {
+        std::basic_string_view sv(x);
+        return isValid<decltype(sv), Enc>(sv);
+    }
+
+    template <class Enc = Utf16>
+    inline bool isValid(const char16_t* x)
+    {
+        std::basic_string_view sv(x);
+        return isValid<decltype(sv), Enc>(sv);
+    }
+
+    template <class Enc = typename detail::LenTraits<sizeof(wchar_t)>::Enc>
+    inline bool isValid(const wchar_t* x)
+    {
+        std::basic_string_view sv(x);
+        return isValid<decltype(sv), Enc>(sv);
+    }
+
+    template <class Enc = Utf8>
+    inline bool isValid(const char* x)
+    {
+        std::basic_string_view sv(x);
+        return isValid<decltype(sv), Enc>(sv);
+    }
+
     ///
     /// Pseudo-iterator for mojibake::put that calls some functor instead
     ///
