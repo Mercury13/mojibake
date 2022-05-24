@@ -380,7 +380,7 @@ TEST (CopyS, Utf16Bad)
 
 
 ///
-/// Normal UTF-8
+/// Good UTF-8
 ///
 TEST (CopyS, Utf8Good)
 {
@@ -389,6 +389,19 @@ TEST (CopyS, Utf8Good)
     auto end = mojibake::copyS(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ(U"abc\u040B\u1234\U00012345", r);
+}
+
+
+///
+/// Bad UTF-8
+///
+TEST (CopyS, Utf8Bad)
+{
+    std::string_view s = "abc" "\xD0\x8B" "\xE1\x88" "\xF0\x92\x8D\x85";
+    char32_t buf[30];
+    auto end = mojibake::copyS(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"abc\u040B\U00012345", r);
 }
 
 
@@ -452,6 +465,19 @@ TEST (CopyM, Utf16Bad)
     auto end = mojibake::copyM(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
+}
+
+
+///
+/// Bad UTF-8
+///
+TEST (CopyM, Utf8Bad)
+{
+    std::string_view s = "ab" "\xD0\x8B" "\xE1\x88" "\xF0\x92\x8D\x85";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\u040B\uFFFD\U00012345", r);
 }
 
 

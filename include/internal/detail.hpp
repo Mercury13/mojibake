@@ -397,15 +397,15 @@ namespace detail {
             abruptEnd: CPP20_UNLIKELY {
                     if (handleMojibake<Enc2>(cpStart, Event::END, dest, onMojibake))
                         goto brk;
-                }
+                } break;
             badNext: CPP20_UNLIKELY {
                     if (handleMojibake<Enc2>(p, Event::BYTE_NEXT, dest, onMojibake))
                         goto brk;
-                }
+                } break;
             badCode: CPP20_UNLIKELY {
                     if (handleMojibake<Enc2>(cpStart, Event::CODE, dest, onMojibake))
                         goto brk;
-                }
+                } break;
             }   // switch
         }
     brk:
