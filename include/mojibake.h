@@ -51,6 +51,13 @@ namespace mojibake {
                 || (cp > SURROGATE_MAX && cp <= UNICODE_MAX));
     }
 
+    enum class Event {
+        CODE,       // UTF-8/32, bad character code, or too long sequence. Ptr = START
+        BYTE_START, // UTF-8/16, bad starting byte/word. Ptr obvious
+        BYTE_NEXT,  // UTF-8/16, bad any byte/word except start. Ptr = BAD
+        END,        // UTF-8/16, code sequence abruptly ended. Ptr = START
+    };
+
     namespace handler {
 
         constexpr char32_t RET_SKIP = 0xFFFFFF;
@@ -60,7 +67,7 @@ namespace mojibake {
 
         ///
         /// Mojibake handler MUST:
-        /// • accept two params: start of bad CP, and place where it became bad
+        /// • accept two params: place and event
         /// • return code point SPECIAL_SKIP, SPECIAL_HALT or valid code point
         ///
         /// Mojibake support varies between serialization types, and…
@@ -74,24 +81,25 @@ namespace mojibake {
         class Skip final {
         public:
             inline char32_t operator () (
-                    [[maybe_unused]] It cpStart,
-                    [[maybe_unused]] It badPlace) const noexcept { return RET_SKIP; }
+
+                    [[maybe_unused]] It place,
+                    [[maybe_unused]] Event event) const noexcept { return RET_SKIP; }
         };  // class Skip
 
         template <class It>
         class Moji final {
         public:
             inline char32_t operator () (
-                    [[maybe_unused]] It cpStart,
-                    [[maybe_unused]] It badPlace) const noexcept { return MOJIBAKE; }
+                    [[maybe_unused]] It place,
+                    [[maybe_unused]] Event event) const noexcept { return MOJIBAKE; }
         };  // class Skip
 
         template <class It>
         class MojiHalt final {
         public:
             inline char32_t operator () (
-                    [[maybe_unused]] It cpStart,
-                    [[maybe_unused]] It badPlace) const noexcept { return MOJIBAKE | FG_HALT; }
+                    [[maybe_unused]] It place,
+                    [[maybe_unused]] Event event) const noexcept { return MOJIBAKE | FG_HALT; }
         };  // class Skip
 
     }   // namespace handler

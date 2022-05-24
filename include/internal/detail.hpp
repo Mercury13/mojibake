@@ -116,9 +116,9 @@ namespace detail {
 
     /// @return [+] halt
     template <class Enc2, class It1, class It2, class Mjh>
-    bool handleMojibake(It1 start, It1 bad, It2& dest, const Mjh& onMojibake)
+    bool handleMojibake(It1 ptr, Event event, It2& dest, const Mjh& onMojibake)
     {
-        auto result = onMojibake(start, bad);
+        auto result = onMojibake(ptr, event);
         bool halt = result & handler::FG_HALT;
         result &= handler::MASK_CODE;
         if (result != handler::RET_SKIP)
@@ -127,16 +127,16 @@ namespace detail {
     }
 
     template <class Enc2, class It1, class It2>
-    inline bool handleMojibake(It1, It1, It2&,
+    inline bool handleMojibake(It1, Event, It2&,
             const typename handler::Skip<It1>&) noexcept
         { return false; }
 
     template <class Enc2, class It1, class It2>
     inline bool handleMojibake(
-            It1 start, It1 bad, It2& dest,
+            It1 ptr, Event event, It2& dest,
             const typename handler::Moji<It1>& onMojibake) noexcept
     {
-        auto result = onMojibake(start, bad);
+        auto result = onMojibake(ptr, event);
         ItEnc<It2, Enc2>::put(dest, result);
         return false;
     }
@@ -160,7 +160,7 @@ namespace detail {
             if (mojibake::isValid(c)) CPP20_LIKELY {
                 ItEnc<It2, Enc2>::put(dest, c);
             } else CPP20_UNLIKELY {
-                if (handleMojibake<Enc2>(p, p, dest, onMojibake))
+                if (handleMojibake<Enc2>(p, Event::CODE, dest, onMojibake))
                     break;
             }
         }
@@ -210,13 +210,13 @@ namespace detail {
                 } else {  // Leading surrogate
                     if (p == end) CPP20_UNLIKELY {
                         // Abrupt end
-                        if (handleMojibake<Enc2>(cpStart, p, dest, onMojibake))
+                        if (handleMojibake<Enc2>(cpStart, Event::END, dest, onMojibake))
                             break;
                     } else {
                         char16_t word2 = *p;
                         if (word2 < SURROGATE_HI_MIN || word2 > SURROGATE_HI_MAX)
                         CPP20_UNLIKELY {
-                            if (handleMojibake<Enc2>(cpStart, p, dest, onMojibake))
+                            if (handleMojibake<Enc2>(p, Event::BYTE_NEXT, dest, onMojibake))
                                 break;
                         } else CPP20_LIKELY {
                             ++p;
@@ -227,7 +227,7 @@ namespace detail {
                 }
             } else {
                 if (word1 <= SURROGATE_MAX) CPP20_UNLIKELY { // Trailing surrogate
-                    if (handleMojibake<Enc2>(cpStart, cpStart, dest, onMojibake))
+                    if (handleMojibake<Enc2>(cpStart, Event::BYTE_START, dest, onMojibake))
                         break;
                 } else { // High BMP char => OK
                     ItEnc<It2, Enc2>::put(dest, word1);
@@ -343,9 +343,9 @@ namespace detail {
     inline It2 ItEnc<It, Utf8>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
     {
     #define MJ_READCP \
-                if (p == end) goto endedCp; \
+                if (p == end) goto abruptEnd; \
                 byte2 = *p;  \
-                if ((byte2 & 0xC0) != 0x80) goto endedCp; \
+                if ((byte2 & 0xC0) != 0x80) goto badByte; \
                 ++p;
 
         for (; p != end;) {
@@ -359,16 +359,12 @@ namespace detail {
             case 0:  // 0###.#### = 1 byte
                 ItEnc<It2, Enc2>::put(dest, byte1);
                 break;
-            case 1: CPP20_UNLIKELY { // 10##.####  cannot be here
-                    if (handleMojibake<Enc2>(cpStart, cpStart, dest, onMojibake))
-                        goto brk;
-                    /// @todo [urgent] skip 10##.####
-                } break;
+            // 1 is default!!
             case 2:  // 110#.#### = 2 bytes
                 cp = (byte1 & 0x1F) << 6;
                 MJ_READCP;  cp |= (byte2 & 0x3F);
                 if (cp < U8_2BYTE_MIN)
-                    goto endedCp;
+                    goto badCode;
                 ItEnc<It2, Enc2>::put(dest, cp);
                 break;
             case 3: // 1110.#### = 3 bytes
@@ -376,7 +372,7 @@ namespace detail {
                 MJ_READCP;  cp |= ((byte2 & 0x3F) << 6);
                 MJ_READCP;  cp |=  (byte2 & 0x3F);
                 if ((cp >= SURROGATE_MIN && cp <= SURROGATE_MAX) || cp < U8_3BYTE_MIN)
-                    goto endedCp;
+                    goto badCode;
                 ItEnc<It2, Enc2>::put(dest, cp);
                 break;
             case 4: // 1111.0### = 4 bytes
@@ -385,16 +381,24 @@ namespace detail {
                 MJ_READCP;  cp |= ((byte2 & 0x3F) << 6);
                 MJ_READCP;  cp |=  (byte2 & 0x3F);
                 if (cp < U8_4BYTE_MIN || cp > UNICODE_MAX)
-                    goto endedCp;
+                    goto badCode;
                 ItEnc<It2, Enc2>::put(dest, cp);
                 break;
             default: CPP20_UNLIKELY {
-                    if (handleMojibake<Enc2>(cpStart, cpStart, dest, onMojibake))
+                    if (handleMojibake<Enc2>(cpStart, Event::BYTE_START, dest, onMojibake))
                         goto brk;
                     /// @todo [urgent] skip 10##.####
                 } break;
-            endedCp: CPP20_UNLIKELY {
-                    if (handleMojibake<Enc2>(cpStart, p, dest, onMojibake))
+            abruptEnd: CPP20_UNLIKELY {
+                    if (handleMojibake<Enc2>(cpStart, Event::END, dest, onMojibake))
+                        goto brk;
+                }
+            badByte: CPP20_UNLIKELY {
+                    if (handleMojibake<Enc2>(cpStart, Event::BYTE_START, dest, onMojibake))
+                        goto brk;
+                }
+            badCode: CPP20_UNLIKELY {
+                    if (handleMojibake<Enc2>(cpStart, Event::CODE, dest, onMojibake))
                         goto brk;
                 }
             }   // switch
