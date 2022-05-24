@@ -469,7 +469,7 @@ TEST (CopyM, Utf16Bad)
 
 
 ///
-/// Bad UTF-8
+/// Bad UTF-8: unfinished CP → mojibake
 ///
 TEST (CopyM, Utf8Bad)
 {
@@ -478,6 +478,45 @@ TEST (CopyM, Utf8Bad)
     auto end = mojibake::copyM(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ(U"ab\u040B\uFFFD\U00012345", r);
+}
+
+
+///
+/// Bad UTF-8: multiple 80’s → ONE mojibake
+///
+TEST (CopyM, Utf8Multiple80)
+{
+    std::string_view s = "ab" "\x80\x81\x82\x83\x84\x85" "\xF0\x92\x8D\x85";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFD\U00012345", r);
+}
+
+
+///
+/// Bad UTF-8: onr 80 → ONE mojibake
+///
+TEST (CopyM, Utf8One80)
+{
+    std::string_view s = "ab" "\x81" "\xF0\x92\x8D\x85";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFD\U00012345", r);
+}
+
+
+///
+/// Bad UTF-8: Fx + multiple 80’s → ONE mojibake
+///
+TEST (CopyM, Utf8F0)
+{
+    std::string_view s = "ab" "\xFE\x80\x81\x82\x83\x84\x85" "\xF0\x92\x8D\x85";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFD\U00012345", r);
 }
 
 
