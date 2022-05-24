@@ -339,13 +339,15 @@ namespace detail {
         { return fallbackCount1(x); }
 #endif
 
+    inline bool isCont(unsigned char b) { return (b & 0xC0) == 0x80; }
+
     template <class It> template <class It2, class Enc2, class Mjh>
     inline It2 ItEnc<It, Utf8>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
     {
     #define MJ_READCP \
                 if (p == end) goto abruptEnd; \
                 byte2 = *p;  \
-                if ((byte2 & 0xC0) != 0x80) goto badByte; \
+                if (!isCont(byte2)) goto badByte; \
                 ++p;
 
         for (; p != end;) {
@@ -387,7 +389,9 @@ namespace detail {
             default: CPP20_UNLIKELY {
                     if (handleMojibake<Enc2>(cpStart, Event::BYTE_START, dest, onMojibake))
                         goto brk;
-                    /// @todo [urgent] skip 10##.####
+                    // Skip all continuation bytes
+                    while (p != end && isCont(*p))
+                        ++p;
                 } break;
             abruptEnd: CPP20_UNLIKELY {
                     if (handleMojibake<Enc2>(cpStart, Event::END, dest, onMojibake))
