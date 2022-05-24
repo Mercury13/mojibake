@@ -2,7 +2,7 @@
 
 #if __cplusplus >= 202002L
     #define CPP20_LIKELY [[likely]]
-    #define CPP20_UNLIKELY [[likely]]
+    #define CPP20_UNLIKELY [[unlikely]]
 #else
     #define CPP20_LIKELY
     #define CPP20_UNLIKELY
@@ -66,7 +66,7 @@ namespace detail {
         template<>
         class UtfTraits<char8_t> {
         public:
-            using Enc = enc::Utf8;
+            using Enc = Utf8;
         };
     #endif
 
@@ -323,8 +323,8 @@ namespace detail {
 
 #if __cplusplus >= 202002L
     // C++20: use standard bit library
-    constexpr int count0(unsigned char x)
-        { return std::countl_zero(x); }
+    constexpr int count1(unsigned char x)
+        { return std::countl_one(x); }
 #elif defined(__GNUC__) || defined (__clang__)
     // G++/clang: re-implement using __builtin_clz; exists long ago
     constexpr int count1(unsigned char x)
