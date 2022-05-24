@@ -209,15 +209,16 @@ namespace detail {
                     ItEnc<It2, Enc2>::put(dest, word1);
                 } else {  // Leading surrogate
                     if (p == end) CPP20_UNLIKELY {
-                        // Abrupt end
-                        if (handleMojibake<Enc2>(cpStart, Event::END, dest, onMojibake))
-                            break;
+                        // Abrupt end — break always
+                        handleMojibake<Enc2>(cpStart, Event::END, dest, onMojibake);
+                        break;
                     } else {
                         char16_t word2 = *p;
                         if (word2 < SURROGATE_HI_MIN || word2 > SURROGATE_HI_MAX)
                         CPP20_UNLIKELY {
                             if (handleMojibake<Enc2>(p, Event::BYTE_NEXT, dest, onMojibake))
                                 break;
+                            // DO NOT increment if BYTE_NEXT, the byte may come in handy
                         } else CPP20_LIKELY {
                             ++p;
                             char32_t cp = (((word1 & 0x3FF) << 10) | (word2 & 0x3FF)) + 0x10000;
@@ -339,7 +340,7 @@ namespace detail {
         { return fallbackCount1(x); }
 #endif
 
-    inline bool isCont(unsigned char b) { return (b & 0xC0) == 0x80; }
+    constexpr bool isCont(unsigned char b) { return (b & 0xC0) == 0x80; }
 
     template <class It> template <class It2, class Enc2, class Mjh>
     inline It2 ItEnc<It, Utf8>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
@@ -347,7 +348,7 @@ namespace detail {
     #define MJ_READCP \
                 if (p == end) goto abruptEnd; \
                 byte2 = *p;  \
-                if (!isCont(byte2)) goto badByte; \
+                if (!isCont(byte2)) goto badNext; \
                 ++p;
 
         for (; p != end;) {
@@ -397,8 +398,8 @@ namespace detail {
                     if (handleMojibake<Enc2>(cpStart, Event::END, dest, onMojibake))
                         goto brk;
                 }
-            badByte: CPP20_UNLIKELY {
-                    if (handleMojibake<Enc2>(cpStart, Event::BYTE_START, dest, onMojibake))
+            badNext: CPP20_UNLIKELY {
+                    if (handleMojibake<Enc2>(p, Event::BYTE_NEXT, dest, onMojibake))
                         goto brk;
                 }
             badCode: CPP20_UNLIKELY {

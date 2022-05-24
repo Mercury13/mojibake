@@ -379,6 +379,19 @@ TEST (CopyS, Utf16Bad)
 }
 
 
+///
+/// Normal UTF-8
+///
+TEST (CopyS, Utf8Good)
+{
+    std::string_view s = "abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85";
+    char32_t buf[30];
+    auto end = mojibake::copyS(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"abc\u040B\u1234\U00012345", r);
+}
+
+
 /////
 /////  mojibake::copyM /////////////////////////////////////////////////////////
 /////
