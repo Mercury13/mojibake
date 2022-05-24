@@ -277,8 +277,11 @@ namespace detail {
     public:
         static void put(It& it, char32_t cp)
                 noexcept (noexcept(*it = cp) && noexcept (++it));
+
         template <class It2, class Enc2, class Mjh>
         static inline It2 copy(It p, It end, It2 dest, const Mjh& onMojibake);
+
+        static bool isValid(It p, It end);
     };
 
     template <class It>
@@ -342,6 +345,10 @@ namespace detail {
 
     constexpr bool isCont(unsigned char b) { return (b & 0xC0) == 0x80; }
 
+    // We need this for current UTF-8 reading
+    static_assert(std::numeric_limits<unsigned char>::radix == 2);
+    static_assert(std::numeric_limits<unsigned char>::digits == 8);
+
     template <class It> template <class It2, class Enc2, class Mjh>
     inline It2 ItEnc<It, Utf8>::copy(It p, It end, It2 dest, const Mjh& onMojibake)
     {
@@ -356,14 +363,14 @@ namespace detail {
             unsigned char byte1 = *cpStart;
             unsigned char byte2;
             char32_t cp;
-            static_assert(std::numeric_limits<unsigned char>::radix == 2);
-            static_assert(std::numeric_limits<unsigned char>::digits == 8);
             switch (count1(byte1)) {
             case 0:  // 0###.#### = 1 byte
                 ItEnc<It2, Enc2>::put(dest, byte1);
                 break;
             // 1 is default!!
             case 2:  // 110#.#### = 2 bytes
+                // Cannot check byte1 here → first read all bytes and ensure
+                // that it looks like two-byte code seq, then check
                 cp = (byte1 & 0x1F) << 6;
                 MJ_READCP;  cp |= (byte2 & 0x3F);
                 if (cp < U8_2BYTE_MIN)
@@ -412,6 +419,56 @@ namespace detail {
         return dest;
 
     #undef MJ_READCP
+    }
+
+    template <class It>
+    bool ItEnc<It, Utf8>::isValid(It p, It end)
+    {
+#define MJ_READCP \
+            if (p == end) return false; \
+            byte2 = *p;  \
+            if (!isCont(byte2)) return false; \
+            ++p;
+
+        for (; p != end;) {
+            auto cpStart = p++;
+            unsigned char byte1 = *cpStart;
+            unsigned char byte2;
+            char32_t cp;
+            switch (count1(byte1)) {
+            case 0:  // 0###.#### = 1 byte
+                break;
+            // 1 is default!!
+            case 2:  // 110#.#### = 2 bytes
+                // 110#.####  10##.####,  put 80 = 1000.0000 →
+                // ___0.0010  __00.0000
+                // byte1 < 1100.0010 = C2 → BAD
+                if (byte1 < 0xC2)
+                    return false;
+                MJ_READCP;
+                break;
+            case 3: // 1110.#### = 3 bytes
+                cp = (byte1 & 0x0F) << 12;
+                MJ_READCP;  cp |= ((byte2 & 0x3F) << 6);
+                MJ_READCP;  cp |=  (byte2 & 0x3F);
+                if ((cp >= SURROGATE_MIN && cp <= SURROGATE_MAX) || cp < U8_3BYTE_MIN)
+                    return false;
+                break;
+            case 4: // 1111.0### = 4 bytes
+                cp = (byte1 & 0x07) << 18;
+                MJ_READCP;  cp |= ((byte2 & 0x3F) << 12);
+                MJ_READCP;  cp |= ((byte2 & 0x3F) << 6);
+                MJ_READCP;  cp |=  (byte2 & 0x3F);
+                if (cp < U8_4BYTE_MIN || cp > UNICODE_MAX)
+                    return false;
+                break;
+            default:
+                return false;
+            }   // switch
+        }
+        return true;
+
+#undef MJ_READCP
     }
 
 }   // namespace detail

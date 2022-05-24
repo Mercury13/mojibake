@@ -510,13 +510,201 @@ TEST (CopyM, Utf8One80)
 ///
 /// Bad UTF-8: Fx + multiple 80’s → ONE mojibake
 ///
-TEST (CopyM, Utf8F0)
+TEST (CopyM, Utf8_F0)
 {
     std::string_view s = "ab" "\xFE\x80\x81\x82\x83\x84\x85" "\xF0\x92\x8D\x85";
     char32_t buf[30];
     auto end = mojibake::copyM(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ(U"ab\uFFFD\U00012345", r);
+}
+
+
+/////
+///// Additional suite for testing UTF-8 correctness ///////////////////////////
+///// in mojibake::copy                              ///////////////////////////
+/////
+
+
+///
+/// 7F encoded in two bytes
+///
+TEST (CopyUtf8, Byte7F_Bad)
+{
+    std::string_view s = "ab" "\xC1\xBF";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFD", r);
+}
+
+
+///
+/// Byte 80 is good
+///
+TEST (CopyUtf8, Byte80_Good)
+{
+    std::string_view s = "ab" "\xC2\x80";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\u0080", r);
+}
+
+
+///
+/// Byte 7FF, the greatest encodeable in two bytes
+///
+TEST (CopyUtf8, Byte7FF_Good)
+{
+    std::string_view s = "ab" "\xDF\xBF";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\u07FF", r);
+}
+
+
+///
+/// Byte 7FF erroneously encoded in three bytes
+///
+TEST (CopyUtf8, Byte7FF_Bad)
+{
+    std::string_view s = "ab" "\xE0\x9F\xBF";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFD", r);
+}
+
+
+///
+/// Byte 800, the first encodeable with three bytes
+///
+TEST (CopyUtf8, Byte800_Good)
+{
+    std::string_view s = "ab" "\xE0\xA0\x80";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\u0800", r);
+}
+
+
+///
+/// D7FF, the last before surrogate
+///
+TEST (CopyUtf8, ByteD7FF_Good)
+{
+    std::string_view s = "ab" "\xED\x9F\xBF";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uD7FF", r);
+}
+
+
+///
+/// D800, the 1st surrogate
+///
+TEST (CopyUtf8, ByteD800_Bad)
+{
+    std::string_view s = "ab" "\xED\xA0\x80";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFD", r);
+}
+
+
+///
+/// DFFF, the last surrogate
+///
+TEST (CopyUtf8, ByteDFFF_Bad)
+{
+    std::string_view s = "ab" "\xED\xBF\xBF";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFD", r);
+}
+
+
+///
+/// E000, the 1st private-use
+///
+TEST (CopyUtf8, ByteE000_Good)
+{
+    std::string_view s = "ab" "\xEE\x80\x80";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uE000", r);
+}
+
+
+///
+/// FFFF, the last 3-byte, non-char but still good
+///
+TEST (CopyUtf8, ByteFFFF_Good)
+{
+    std::string_view s = "ab" "\xEF\xBF\xBF";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFF", r);
+}
+
+
+///
+/// 10000, the 1st SMP and 4-byte
+///
+TEST (CopyUtf8, Byte10000_Good)
+{
+    std::string_view s = "ab" "\xF0\x90\x80\x80";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\U00010000", r);
+}
+
+
+///
+/// FFFF encoded with 4 bytes — too long
+///
+TEST (CopyUtf8, ByteFFFF_Bad)
+{
+    std::string_view s = "ab" "\xF0\x8F\xBF\xBF";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFD", r);
+}
+
+
+///
+/// 10FFFF, last in Unicode
+///
+TEST (CopyUtf8, Byte10FFFF_Good)
+{
+    std::string_view s = "ab" "\xF4\x8F\xBF\xBF";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\U0010FFFF", r);
+}
+
+
+///
+/// 110000 bad
+///
+TEST (CopyUtf8, Byte110000_Bad)
+{
+    std::string_view s = "ab" "\xF4\x90\x80\x80";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFD", r);
 }
 
 
@@ -734,5 +922,15 @@ TEST (IsValid, Utf16Good_NormalCp)
     std::u16string s = u"abc\u040B";
     s.push_back(0xD900);    // Low surrogate
     s.push_back(0xDD00);    // High surrogate
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// Good UTF-8
+///
+TEST (IsValid, Utf8Good)
+{
+    std::string_view s = "abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85";
     EXPECT_TRUE(mojibake::isValid(s));
 }
