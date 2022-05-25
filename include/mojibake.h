@@ -70,15 +70,14 @@ namespace mojibake {
         /// • accept two params: place and event
         /// • return code point SPECIAL_SKIP, SPECIAL_HALT or valid code point
         ///
-        /// UTF-8: if BOTH abrupt end and bad byte happen,
-        /// bhv is implementation-dependent, decoder can report either.
-        ///
         /// Mojibake support varies between serialization types, and…
         /// • [U32] bad codepoint is just replaced with mojibake
         /// • [U8/16] implementation-dependent, but…
         ///   • [U8] wrong but well-serialized codepoint = EXACTLY ONE mojibake
         ///   • [U8] long code sequence = EXACTLY ONE mojibake
         ///   • incomplete CP between two good = EXACTLY ONE mojibake
+        ///   • [U8] if BOTH abrupt end and bad byte happen, decoder can report
+        ///       either, but just one.
         ///
         template <class It>
         class Skip final {
