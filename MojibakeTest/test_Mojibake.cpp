@@ -709,6 +709,32 @@ TEST (CopyUtf8, Byte110000_Bad)
 }
 
 
+///
+/// Incomplete + banned → BOTH are mojibake
+///
+TEST (CopyUtf8, IncompleteBanned1)
+{
+    std::string_view s = "ab" "\xE3\x81" "\xFD";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFD\uFFFD", r);
+}
+
+
+///
+/// Add a few 8x to banned
+///
+TEST (CopyUtf8, IncompleteBanned2)
+{
+    std::string_view s = "ab" "\xE3\x81" "\xFD\x80\x90\xA0\xB0\x81";
+    char32_t buf[30];
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"ab\uFFFD\uFFFD", r);
+}
+
+
 /////
 /////  mojibake::copyMH ////////////////////////////////////////////////////////
 /////
@@ -1164,6 +1190,8 @@ TEST (Error, U32Good)
 /// UTF-32: code too high
 /// Bhv fixed, CODE at bad CP
 ///
+/// We also test mock object’s ability to insert custom codepoints for mojibake
+///
 TEST (Error, U32TooHigh)
 {
     std::u32string s = U"abc";
@@ -1356,6 +1384,25 @@ TEST (Error, Utf8AbruptEnd23)
 
 
 ///
+/// UTF-8: long code of length 2
+///   C1 < 80, need 1 byte
+/// Bhv varies
+///  • CODE at start of CP
+///  • END at start of CP   <<<<<<<
+///
+TEST (Error, Utf8LongCodeAbruptEnd2)
+{
+    std::string s = "ab" "\xD1\xA6" "\xC1";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"ab" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(4u, h.pos()); // ab, 2×Cyr OK, and #4 is bad
+}
+
+
+///
 /// UTF-8: unfinished 1/3
 /// Bhv fixed, BYTE_NEXT at bad byte
 ///
@@ -1419,4 +1466,110 @@ TEST (Error, Utf8Surrogate3)
     EXPECT_EQ(1, h.nEvents);
     EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
     EXPECT_EQ(3u, h.pos()); // u, 2×Cyr OK, and #3 (high-sur in UTF-8) is bad
+}
+
+
+///
+/// UTF-8: long code of length 3 + abrupt end
+///   E0 9F <= 7FF, need 2 bytes
+/// Bhv varies
+///  • CODE at start of CP
+///  • END at start of CP   <<<<<<<
+///
+TEST (Error, Utf8LongCodeAbruptEnd3)
+{
+    std::string s = "xyz" "\xD1\xA6" "\xE0\x9F";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr OK, and #4 (bad CP) is bad
+}
+
+
+///
+/// UTF-8: long code of length 3 + bad byte
+///   E0 9F <= 7FF, need 2 bytes
+/// Bhv fixed: BYTE_NEXT at bad byte
+///
+TEST (Error, Utf8LongCodeBadByte3)
+{
+    std::string s = "xyz" "\xD1\xA6" "\xE0\x9F" "t";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A" "t", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
+    EXPECT_EQ(7u, h.pos()); // xyz, 2×Cyr, E0 9F OK, and #7 is bad byte
+}
+
+
+
+
+///
+/// UTF-8: banned byte
+/// Bhv varies: first BYTE_START on FA, then 80??
+///   (we skip those 80)
+///
+TEST (Error, Utf8BannedByte1)
+{
+    std::string s = "xyz" "\xD1\xA6" "\xFA\x80\x80\x80\x80\x80";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr, and #5 is bad byte
+}
+
+
+///
+/// UTF-8: banned byte
+/// Bhv varies: first BYTE_START on FA, then 80??
+///   (we skip those 80)
+///
+TEST (Error, Utf8BannedByte2)
+{
+    std::string s = "xyz" "\xD1\xA6" "\xFA\x81\x82\x93\x94\xA5\xB6" "u";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A" "u", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr, and #5 is bad byte
+}
+
+
+///
+/// UTF-8: continuation byte
+/// Bhv varies: first BYTE_START on 80 then what????
+///   (we trigger exactly one alarm)
+///
+TEST (Error, Utf8EightyByte1)
+{
+    std::string s = "xyz" "\xD1\xA6" "\x80\x80\x80\x80\x80";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr, and #5 is bad byte
+}
+
+
+///
+/// UTF-8: continuation byte
+/// Bhv varies: first BYTE_START on 80 then what????
+///   (we trigger exactly one alarm)
+///
+TEST (Error, Utf8EightyByte2)
+{
+    std::string s = "xyz" "\xD1\xA6" "\x81\x82\x93\x94\xA5\xB6" "u";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A" "u", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr, and #5 is bad byte
 }

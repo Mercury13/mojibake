@@ -78,13 +78,13 @@ namespace mojibake {
         ///   • incomplete then good → BYTE_NEXT + normal recovery
         ///       e.g. losur + losur + hisur = mojibake(BYTE_NEXT) + surrogate
         ///   • [U8] if several of abrupt end, bad byte and low/high CP happen,
-        ///       decoder may report EITHER, but just ONE.
+        ///       decoder reports JUST ONE problem.
+        ///         BYTE_NEXT > END, CODE!!!
         ///       Example: F0 8F 30 = …
         ///        • abrupt end (F0 → 4-byte code sequence)
         ///        • too low code (F0 8F → code < 10000, need 3 bytes)
         ///        • bad byte 30 (80…BF allowed here)
-        ///       Bad byte → abrupt end → bad CP is preferred order,
-        ///       (easier to recover), but that’s not required.
+        ///       We definitely respond BYTE_NEXT here (it’s > end, code)
         ///
         template <class It>
         class Skip final {
