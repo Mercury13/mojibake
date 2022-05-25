@@ -426,15 +426,14 @@ namespace detail {
     {
 #define MJ_READCP \
             if (p == end) return false; \
-            byte2 = *p;  \
-            if (!isCont(byte2)) return false; \
+            byte1 = *p;  \
+            if (!isCont(byte1)) return false; \
             ++p;
 
         for (; p != end;) {
             auto cpStart = p++;
             unsigned char byte1 = *cpStart;
-            unsigned char byte2;
-            char32_t cp;
+            unsigned cp;
             switch (count1(byte1)) {
             case 0:  // 0###.#### = 1 byte
                 break;
@@ -448,19 +447,24 @@ namespace detail {
                 MJ_READCP;
                 break;
             case 3: // 1110.#### = 3 bytes
-                cp = (byte1 & 0x0F) << 12;
-                MJ_READCP;  cp |= ((byte2 & 0x3F) << 6);
-                MJ_READCP;  cp |=  (byte2 & 0x3F);
-                if ((cp >= SURROGATE_MIN && cp <= SURROGATE_MAX) || cp < U8_3BYTE_MIN)
+                // E0 A0 80 = 800  (1st 3-byte)
+                // ED A0 80 = D800 (1st surrogate)
+                // ED BF BF = DFFF (last surrogate)
+                cp = byte1 << 8;
+                MJ_READCP;  cp |= byte1;
+                if ((cp >= 0xEDA0 && cp <= 0xEDBF) || cp < 0xE0A0)
                     return false;
+                MJ_READCP;
                 break;
             case 4: // 1111.0### = 4 bytes
-                cp = (byte1 & 0x07) << 18;
-                MJ_READCP;  cp |= ((byte2 & 0x3F) << 12);
-                MJ_READCP;  cp |= ((byte2 & 0x3F) << 6);
-                MJ_READCP;  cp |=  (byte2 & 0x3F);
-                if (cp < U8_4BYTE_MIN || cp > UNICODE_MAX)
+                // F0 90 80 80 = 1'0000  (1st 4-byte)
+                // F4 8F BF BF = 10'FFFF (last Unicode)
+                cp = byte1 << 8;
+                MJ_READCP;  cp |= byte1;
+                if (cp < 0xF090 || cp > 0xF48F)
                     return false;
+                MJ_READCP;
+                MJ_READCP;
                 break;
             default:
                 return false;

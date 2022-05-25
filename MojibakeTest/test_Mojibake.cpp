@@ -934,3 +934,149 @@ TEST (IsValid, Utf8Good)
     std::string_view s = "abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85";
     EXPECT_TRUE(mojibake::isValid(s));
 }
+
+
+/////
+/////  mojibake::isValid     ///////////////////////////////////////////////////
+/////  Difficulties of UTF-8 ///////////////////////////////////////////////////
+/////
+
+
+///
+/// 7F encoded in two bytes
+///
+TEST (IsValidU8, Byte7F_Bad)
+{
+    std::string_view s = "ab" "\xC1\xBF";
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// Byte 80 is good
+///
+TEST (IsValidU8, Byte80_Good)
+{
+    std::string_view s = "ab" "\xC2\x80";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// Byte 7FF, the greatest encodeable in two bytes
+///
+TEST (IsValidU8, Byte7FF_Good)
+{
+    std::string_view s = "ab" "\xDF\xBF";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// Byte 7FF erroneously encoded in three bytes
+///
+TEST (IsValidU8, Byte7FF_Bad)
+{
+    std::string_view s = "ab" "\xE0\x9F\xBF";
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// Byte 800, the first encodeable with three bytes
+///
+TEST (IsValidU8, Byte800_Good)
+{
+    std::string_view s = "ab" "\xE0\xA0\x80";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// D7FF, the last before surrogate
+///
+TEST (IsValidU8, ByteD7FF_Good)
+{
+    std::string_view s = "ab" "\xED\x9F\xBF";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// D800, the 1st surrogate
+///
+TEST (IsValidU8, ByteD800_Bad)
+{
+    std::string_view s = "ab" "\xED\xA0\x80";
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// DFFF, the last surrogate
+///
+TEST (IsValidU8, ByteDFFF_Bad)
+{
+    std::string_view s = "ab" "\xED\xBF\xBF";
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// E000, the 1st private-use
+///
+TEST (IsValidU8, ByteE000_Good)
+{
+    std::string_view s = "ab" "\xEE\x80\x80";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// FFFF, the last 3-byte, non-char but still good
+///
+TEST (IsValidU8, ByteFFFF_Good)
+{
+    std::string_view s = "ab" "\xEF\xBF\xBF";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// 10000, the 1st SMP and 4-byte
+///
+TEST (IsValidU8, Byte10000_Good)
+{
+    std::string_view s = "ab" "\xF0\x90\x80\x80";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// FFFF encoded with 4 bytes — too long
+///
+TEST (IsValidU8, ByteFFFF_Bad)
+{
+    std::string_view s = "ab" "\xF0\x8F\xBF\xBF";
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// 10FFFF, last in Unicode
+///
+TEST (IsValidU8, Byte10FFFF_Good)
+{
+    std::string_view s = "ab" "\xF4\x8F\xBF\xBF";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// 110000 bad
+///
+TEST (IsValidU8, Byte110000_Bad)
+{
+    std::string_view s = "ab" "\xF4\x90\x80\x80";
+    EXPECT_FALSE(mojibake::isValid(s));
+}
