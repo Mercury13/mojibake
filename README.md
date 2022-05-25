@@ -1,5 +1,8 @@
 # Mojibake
 
 Simple Unicode conversion library
+* C++17
+* header-only (I’ll probably add a CPP file when I start to work with single-byte encodings)
+* predictable reaction to wrongly-encoded text
 
-“Mojibake” is a Japanese name for test shown in wrong encoding. I just needed a library that has a predictable reaction to wrongly-encoded text.
+“Mojibake” is a Japanese name for text shown in wrong encoding.

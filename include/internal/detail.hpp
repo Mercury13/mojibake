@@ -62,6 +62,18 @@ namespace detail {
         using Enc = Utf8;
     };
 
+    template<>
+    class UtfTraits<signed char> {
+    public:
+        using Enc = Utf8;
+    };
+
+    template<>
+    class UtfTraits<unsigned char> {
+    public:
+        using Enc = Utf8;
+    };
+
     #if __cplusplus >= 202002L
         template<>
         class UtfTraits<char8_t> {
@@ -77,7 +89,55 @@ namespace detail {
     };
 
     template<>
+    class UtfTraits<signed short> {
+    public:
+        using Enc = Utf16;
+    };
+
+    template<>
+    class UtfTraits<unsigned short> {
+    public:
+        using Enc = Utf16;
+    };
+
+    template<>
+    class UtfTraits<signed int> {
+    public:
+        using Enc = typename LenTraits<sizeof(int)>::Enc;
+    };
+
+    template<>
+    class UtfTraits<unsigned int> {
+    public:
+        using Enc = typename LenTraits<sizeof(unsigned int)>::Enc;
+    };
+
+    template<>
     class UtfTraits<char32_t> {
+    public:
+        using Enc = Utf32;
+    };
+
+    template<>
+    class UtfTraits<long> {
+    public:
+        using Enc = Utf32;
+    };
+
+    template<>
+    class UtfTraits<unsigned long> {
+    public:
+        using Enc = Utf32;
+    };
+
+    template<>
+    class UtfTraits<long long> {
+    public:
+        using Enc = Utf32;
+    };
+
+    template<>
+    class UtfTraits<unsigned long long> {
     public:
         using Enc = Utf32;
     };
@@ -329,7 +389,7 @@ namespace detail {
     constexpr int count1(unsigned char x)
         { return std::countl_one(x); }
 #elif defined(__GNUC__) || defined (__clang__)
-    // G++/clang: re-implement using __builtin_clz; exists long ago
+    // G++/clang: re-implement using __builtin_clz; exists long before C++17
     constexpr int count1(unsigned char x)
     {
         constexpr auto ndInt  = std::numeric_limits<unsigned int> ::digits;

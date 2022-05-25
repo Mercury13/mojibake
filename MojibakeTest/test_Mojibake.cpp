@@ -1084,6 +1084,36 @@ TEST (IsValidU8, Byte110000_Bad)
 
 
 /////
+/////  fallbackCount1 //////////////////////////////////////////////////////////
+/////
+/////
+
+///
+/// As we use MinGW here, fallbackCount1 stays untested.
+/// Test it somehow
+///
+TEST (FallbackCount1, xxx)
+{
+    EXPECT_EQ(0, mojibake::detail::fallbackCount1(0b0000'0000));
+    EXPECT_EQ(0, mojibake::detail::fallbackCount1(0b0111'1111));
+    EXPECT_EQ(1, mojibake::detail::fallbackCount1(0b1000'0000));
+    EXPECT_EQ(1, mojibake::detail::fallbackCount1(0b1011'1111));
+    EXPECT_EQ(2, mojibake::detail::fallbackCount1(0b1100'0000));
+    EXPECT_EQ(2, mojibake::detail::fallbackCount1(0b1101'1111));
+    EXPECT_EQ(3, mojibake::detail::fallbackCount1(0b1110'0000));
+    EXPECT_EQ(3, mojibake::detail::fallbackCount1(0b1110'1111));
+    EXPECT_EQ(4, mojibake::detail::fallbackCount1(0b1111'0000));
+    EXPECT_EQ(4, mojibake::detail::fallbackCount1(0b1111'0111));
+    EXPECT_EQ(5, mojibake::detail::fallbackCount1(0b1111'1000));
+    EXPECT_EQ(5, mojibake::detail::fallbackCount1(0b1111'1011));
+    EXPECT_EQ(6, mojibake::detail::fallbackCount1(0b1111'1100));
+    EXPECT_EQ(6, mojibake::detail::fallbackCount1(0b1111'1101));
+    EXPECT_EQ(7, mojibake::detail::fallbackCount1(0b1111'1110));
+    EXPECT_EQ(8, mojibake::detail::fallbackCount1(0b1111'1111));
+}
+
+
+/////
 /////  Error handling //////////////////////////////////////////////////////////
 /////
 
@@ -1109,6 +1139,22 @@ public:
 
     size_t pos() const { return firstPlace - start; }
 };
+
+
+///
+/// UTF-32: good string, testing mock object
+///
+TEST (Error, U32Good)
+{
+    std::u32string s = U"abc\U0001E123\uA9A3";
+
+    MyHandler h(s);
+    auto r = mojibake::to<std::string>(s, h);
+    EXPECT_EQ("abc" "\xF0\x9E\x84\xA3" "\xEA\xA6\xA3", r);
+    EXPECT_EQ(0, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(5u, h.pos());   // a,b,c,40B good
+}
 
 
 ///
@@ -1172,7 +1218,7 @@ TEST (Error, U16AbruptEnd)
 
 ///
 /// UTF-16: interrupted codepoint
-/// Bhv fixed, BYTE_START END at CP’s start
+/// Bhv fixed, BYTE_NEXT where high surrogate should have been
 ///
 TEST (Error, U16InterruptedCp1)
 {
@@ -1190,7 +1236,7 @@ TEST (Error, U16InterruptedCp1)
 
 ///
 /// UTF-16: interrupted codepoint
-/// Bhv fixed, BYTE_START END at CP’s start
+/// Bhv fixed, BYTE_NEXT where high surrogate should have been
 ///
 TEST (Error, U16InterruptedCp2)
 {
@@ -1222,4 +1268,53 @@ TEST (Error, U16HighSurrogate)
     EXPECT_EQ(1, h.nEvents);
     EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
     EXPECT_EQ(3u, h.pos()); // q, 2×Tangsa OK, and #4 (high sur) is bad
+}
+
+
+///
+/// UTF-8: abrupt end 1/2
+/// Bhv fixed, END at start of CP
+///
+TEST (Error, Utf8AbruptEnd12)
+{
+    std::string s = "ab" "\xE1\x9D\x8C" "\xD7";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"ab" "\u174C\uFFFD", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // ab, 3×Buhid OK, and #5 (unfinished Hebrew) is bad
+}
+
+
+///
+/// UTF-8: unfinished 1/2
+/// Bhv fixed, BYTE_NEXT at bad byte
+///
+TEST (Error, Utf8Unfinished12)
+{
+    std::string s = "ab" "\xE1\x9D\x8C" "\xD7" "c";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"ab" "\u174C\uFFFD" "c", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
+    EXPECT_EQ(6u, h.pos()); // ab, 3×Buhid, unfinished Hebrew OK, c is bad
+}
+
+
+///
+/// UTF-8: long code of length 2
+///   C1 BF = 7F encoded in two bytes
+/// Bhv fixed, CODE at start of CP
+///
+TEST (Error, Utf8LongCode2)
+{
+    std::string s = "ab" "\xD1\xA6" "\xC1\xBF";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"ab" "\u0466\uFFFD", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
+    EXPECT_EQ(4u, h.pos()); // ab, 2×Cyr OK, and #4 (7F in two bytes) is bad
 }

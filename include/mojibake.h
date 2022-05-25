@@ -71,13 +71,20 @@ namespace mojibake {
         /// • return code point or RET_SKIP, maybe with FG_HALT.
         ///
         /// Mojibake support varies between serialization types, and…
-        /// • [U32] bad codepoint is just replaced with mojibake
+        /// • [U32] every bad codepoint → CODE
         /// • [U8/16] implementation-dependent, but…
-        ///   • [U8] surrogate/high but well-serialized codepoint = EXACTLY ONE mojibake
-        ///   • [U8] long code sequence = EXACTLY ONE mojibake
-        ///   • incomplete CP between two good = EXACTLY ONE mojibake
-        ///   • [U8] if BOTH abrupt end and bad byte happen, decoder may report
-        ///       either, but just one.
+        ///   • [U8] surrogate/high but well-serialized → CODE
+        ///   • [U8] too long code sequence → CODE
+        ///   • incomplete then good → BYTE_NEXT + normal recovery
+        ///       e.g. losur + losur + hisur = mojibake(BYTE_NEXT) + surrogate
+        ///   • [U8] if several of abrupt end, bad byte and low/high CP happen,
+        ///       decoder may report EITHER, but just ONE.
+        ///       Example: F0 8F 30 = …
+        ///        • abrupt end (F0 → 4-byte code sequence)
+        ///        • too low code (F0 8F → code < 10000, need 3 bytes)
+        ///        • bad byte 30 (80…BF allowed here)
+        ///       Bad byte → abrupt end → bad CP is preferred order,
+        ///       (easier to recover), but that’s not required.
         ///
         template <class It>
         class Skip final {
