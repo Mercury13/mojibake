@@ -269,6 +269,9 @@ namespace mojibake {
         return r;
     }
 
+    ///
+    /// Same, mojibake just skipped
+    ///
     template <class To, class From,
               class Enc2 = typename detail::ContUtfTraits<To>::Enc,
               class Enc1 = typename detail::ContUtfTraits<From>::Enc>
@@ -279,6 +282,9 @@ namespace mojibake {
         return to<To, From, Sk, Enc2, Enc1>(from);
     }
 
+    ///
+    /// Same, mojibake quietly displayed
+    ///
     template <class To, class From,
               class Enc2 = typename detail::ContUtfTraits<To>::Enc,
               class Enc1 = typename detail::ContUtfTraits<From>::Enc>
