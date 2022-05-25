@@ -68,15 +68,15 @@ namespace mojibake {
         ///
         /// Mojibake handler MUST:
         /// • accept two params: place and event
-        /// • return code point SPECIAL_SKIP, SPECIAL_HALT or valid code point
+        /// • return code point or RET_SKIP, maybe with FG_HALT.
         ///
         /// Mojibake support varies between serialization types, and…
         /// • [U32] bad codepoint is just replaced with mojibake
         /// • [U8/16] implementation-dependent, but…
-        ///   • [U8] wrong but well-serialized codepoint = EXACTLY ONE mojibake
+        ///   • [U8] surrogate/high but well-serialized codepoint = EXACTLY ONE mojibake
         ///   • [U8] long code sequence = EXACTLY ONE mojibake
         ///   • incomplete CP between two good = EXACTLY ONE mojibake
-        ///   • [U8] if BOTH abrupt end and bad byte happen, decoder can report
+        ///   • [U8] if BOTH abrupt end and bad byte happen, decoder may report
         ///       either, but just one.
         ///
         template <class It>

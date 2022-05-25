@@ -421,6 +421,7 @@ TEST (CopyM, Utf32Normal)
     EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
 }
 
+// UTF-8 mojibake
 #define U8_MOJ "\xEF\xBF\xBD"
 
 ///
@@ -1079,4 +1080,146 @@ TEST (IsValidU8, Byte110000_Bad)
 {
     std::string_view s = "ab" "\xF4\x90\x80\x80";
     EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+/////
+/////  Error handling //////////////////////////////////////////////////////////
+/////
+
+template <class Cont>
+class MyHandler
+{
+public:
+    using It = typename Cont::const_iterator;
+    MyHandler(Cont& x) : start(x.begin()), firstPlace(x.end()) {}
+    mutable int nEvents = 0;
+    It start;
+    mutable It firstPlace;
+    mutable mojibake::Event firstEvent = mojibake::Event::END;
+
+    char32_t operator()(It place, mojibake::Event event) const
+    {
+        if (++nEvents == 1) {
+            firstPlace = place;
+            firstEvent = event;
+        }
+        return mojibake::MOJIBAKE;
+    }
+
+    size_t pos() const { return firstPlace - start; }
+};
+
+
+///
+/// UTF-32: code too high
+/// Bhv fixed, CODE at bad CP
+///
+TEST (Error, U32TooHigh)
+{
+    std::u32string s = U"abc";
+    s.push_back(0x040B);
+    s.push_back(0x110000);  // Too high
+    s.push_back(0x1234);
+    s.push_back(0x12345);
+
+    MyHandler h(s);
+    auto r = mojibake::to<std::string>(s, h);
+    EXPECT_EQ("abc" "\xD0\x8B" U8_MOJ "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
+    EXPECT_EQ(4u, h.pos());   // a,b,c,40B good
+}
+
+
+///
+/// UTF-32: code is UTF-16 surrogate
+/// Bhv fixed, CODE at bad CP
+///
+TEST (Error, U32Surrogate)
+{
+    std::u32string s = U"abc";
+    s.push_back(0x040B);
+    s.push_back(0x1234);
+    s.push_back(0xDDDD);  // Surrogate
+    s.push_back(0x12345);
+
+    MyHandler h(s);
+    auto r = mojibake::to<std::string>(s, h);
+    EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" U8_MOJ "\xF0\x92\x8D\x85", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
+    EXPECT_EQ(5u, h.pos());
+}
+
+
+///
+/// UTF-16: abrupt end
+/// Bhv fixed, END at CP’s start
+///
+TEST (Error, U16AbruptEnd)
+{
+    std::u16string s = u"x\u040B";
+    s.push_back(0xD900);    // Lone low surrogate
+    MyHandler h(s);
+    auto r = mojibake::to<std::string>(s, h);
+    EXPECT_EQ("x" "\xD0\x8B" U8_MOJ, r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(2u, h.pos());
+}
+
+
+///
+/// UTF-16: interrupted codepoint
+/// Bhv fixed, BYTE_START END at CP’s start
+///
+TEST (Error, U16InterruptedCp1)
+{
+    std::u16string s = u"q\U00016A85";  // Some surrogate from Tangsa
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('a');
+    MyHandler h(s);
+    auto r = mojibake::to<std::string>(s, h);
+    EXPECT_EQ("q" "\xF0\x96\xAA\x85" U8_MOJ "a", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
+    EXPECT_EQ(4u, h.pos()); // q, 2×Tangsa, low sur OK, and #4 is bad
+}
+
+
+///
+/// UTF-16: interrupted codepoint
+/// Bhv fixed, BYTE_START END at CP’s start
+///
+TEST (Error, U16InterruptedCp2)
+{
+    std::u16string s = u"t\u040B";
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back(0xD838);    // Some surrogate from Toto
+        s.push_back(0xDE9B);
+    MyHandler h(s);
+    auto r = mojibake::to<std::string>(s, h);
+    EXPECT_EQ("t" "\xD0\x8B" U8_MOJ "\xF0\x9E\x8A\x9B", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
+    EXPECT_EQ(3u, h.pos());  // t, Cyr, low sur OK, and #3 is bad
+}
+
+
+///
+/// UTF-16: high surrogate w/o prior low
+/// Bhv fixed, BYTE_START at that surrogate
+///
+TEST (Error, U16HighSurrogate)
+{
+    std::u16string s = u"q\U00016A85";  // Some surrogate from Tangsa
+    s.push_back(0xDF34);    // High surrogate
+    s.push_back('a');
+    MyHandler h(s);
+    auto r = mojibake::to<std::string>(s, h);
+    EXPECT_EQ("q" "\xF0\x96\xAA\x85" U8_MOJ "a", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
+    EXPECT_EQ(3u, h.pos()); // q, 2×Tangsa OK, and #4 (high sur) is bad
 }
