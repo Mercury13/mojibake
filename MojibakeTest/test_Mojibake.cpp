@@ -1117,6 +1117,9 @@ TEST (FallbackCount1, xxx)
 /////  Error handling //////////////////////////////////////////////////////////
 /////
 
+constexpr char32_t U32_SMIL= 0x263A;  // some BMP smilie
+#define U8_SMIL "\xE2\x98\xBA"
+
 template <class Cont>
 class MyHandler
 {
@@ -1134,7 +1137,7 @@ public:
             firstPlace = place;
             firstEvent = event;
         }
-        return mojibake::MOJIBAKE;
+        return U32_SMIL;
     }
 
     size_t pos() const { return firstPlace - start; }
@@ -1171,7 +1174,7 @@ TEST (Error, U32TooHigh)
 
     MyHandler h(s);
     auto r = mojibake::to<std::string>(s, h);
-    EXPECT_EQ("abc" "\xD0\x8B" U8_MOJ "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
+    EXPECT_EQ("abc" "\xD0\x8B" U8_SMIL "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
     EXPECT_EQ(1, h.nEvents);
     EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
     EXPECT_EQ(4u, h.pos());   // a,b,c,40B good
@@ -1192,7 +1195,7 @@ TEST (Error, U32Surrogate)
 
     MyHandler h(s);
     auto r = mojibake::to<std::string>(s, h);
-    EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" U8_MOJ "\xF0\x92\x8D\x85", r);
+    EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" U8_SMIL "\xF0\x92\x8D\x85", r);
     EXPECT_EQ(1, h.nEvents);
     EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
     EXPECT_EQ(5u, h.pos());
@@ -1209,7 +1212,7 @@ TEST (Error, U16AbruptEnd)
     s.push_back(0xD900);    // Lone low surrogate
     MyHandler h(s);
     auto r = mojibake::to<std::string>(s, h);
-    EXPECT_EQ("x" "\xD0\x8B" U8_MOJ, r);
+    EXPECT_EQ("x" "\xD0\x8B" U8_SMIL, r);
     EXPECT_EQ(1, h.nEvents);
     EXPECT_EQ(mojibake::Event::END, h.firstEvent);
     EXPECT_EQ(2u, h.pos());
@@ -1227,7 +1230,7 @@ TEST (Error, U16InterruptedCp1)
     s.push_back('a');
     MyHandler h(s);
     auto r = mojibake::to<std::string>(s, h);
-    EXPECT_EQ("q" "\xF0\x96\xAA\x85" U8_MOJ "a", r);
+    EXPECT_EQ("q" "\xF0\x96\xAA\x85" U8_SMIL "a", r);
     EXPECT_EQ(1, h.nEvents);
     EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
     EXPECT_EQ(4u, h.pos()); // q, 2×Tangsa, low sur OK, and #4 is bad
@@ -1246,7 +1249,7 @@ TEST (Error, U16InterruptedCp2)
         s.push_back(0xDE9B);
     MyHandler h(s);
     auto r = mojibake::to<std::string>(s, h);
-    EXPECT_EQ("t" "\xD0\x8B" U8_MOJ "\xF0\x9E\x8A\x9B", r);
+    EXPECT_EQ("t" "\xD0\x8B" U8_SMIL "\xF0\x9E\x8A\x9B", r);
     EXPECT_EQ(1, h.nEvents);
     EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
     EXPECT_EQ(3u, h.pos());  // t, Cyr, low sur OK, and #3 is bad
@@ -1264,7 +1267,7 @@ TEST (Error, U16HighSurrogate)
     s.push_back('a');
     MyHandler h(s);
     auto r = mojibake::to<std::string>(s, h);
-    EXPECT_EQ("q" "\xF0\x96\xAA\x85" U8_MOJ "a", r);
+    EXPECT_EQ("q" "\xF0\x96\xAA\x85" U8_SMIL "a", r);
     EXPECT_EQ(1, h.nEvents);
     EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
     EXPECT_EQ(3u, h.pos()); // q, 2×Tangsa OK, and #4 (high sur) is bad
@@ -1280,7 +1283,7 @@ TEST (Error, Utf8AbruptEnd12)
     std::string s = "ab" "\xE1\x9D\x8C" "\xD7";
     MyHandler h(s);
     auto r = mojibake::to<std::u32string>(s, h);
-    EXPECT_EQ(U"ab" "\u174C\uFFFD", r);
+    EXPECT_EQ(U"ab" "\u174C\u263A", r);
     EXPECT_EQ(1, h.nEvents);
     EXPECT_EQ(mojibake::Event::END, h.firstEvent);
     EXPECT_EQ(5u, h.pos()); // ab, 3×Buhid OK, and #5 (unfinished Hebrew) is bad
@@ -1296,7 +1299,7 @@ TEST (Error, Utf8Unfinished12)
     std::string s = "ab" "\xE1\x9D\x8C" "\xD7" "c";
     MyHandler h(s);
     auto r = mojibake::to<std::u32string>(s, h);
-    EXPECT_EQ(U"ab" "\u174C\uFFFD" "c", r);
+    EXPECT_EQ(U"ab" "\u174C\u263A" "c", r);
     EXPECT_EQ(1, h.nEvents);
     EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
     EXPECT_EQ(6u, h.pos()); // ab, 3×Buhid, unfinished Hebrew OK, c is bad
@@ -1313,8 +1316,107 @@ TEST (Error, Utf8LongCode2)
     std::string s = "ab" "\xD1\xA6" "\xC1\xBF";
     MyHandler h(s);
     auto r = mojibake::to<std::u32string>(s, h);
-    EXPECT_EQ(U"ab" "\u0466\uFFFD", r);
+    EXPECT_EQ(U"ab" "\u0466\u263A", r);
     EXPECT_EQ(1, h.nEvents);
     EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
     EXPECT_EQ(4u, h.pos()); // ab, 2×Cyr OK, and #4 (7F in two bytes) is bad
+}
+
+
+///
+/// UTF-8: abrupt end 1/3
+/// Bhv fixed, END at start of CP
+///
+TEST (Error, Utf8AbruptEnd13)
+{
+    std::string s = "abcde" "\xE0\xAC\x8A" "\xE1";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"abcde" "\u0B0A\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(8u, h.pos()); // abcde, 3×Oriya OK, and #8 (unfinished Ethiopic) is bad
+}
+
+
+///
+/// UTF-8: abrupt end 2/3
+/// Bhv fixed, END at start of CP
+///
+TEST (Error, Utf8AbruptEnd23)
+{
+    std::string s = "abcde" "\xE0\xAC\x8A" "\xE1\x8A";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"abcde" "\u0B0A\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(8u, h.pos()); // abcde, 3×Oriya OK, and #8 (unfinished Ethiopic) is bad
+}
+
+
+///
+/// UTF-8: unfinished 1/3
+/// Bhv fixed, BYTE_NEXT at bad byte
+///
+TEST (Error, Utf8Unfinished13)
+{
+    std::string s = "abcde" "\xE0\xAC\x8A" "\xE1" "Q";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"abcde" "\u0B0A\u263A" "Q", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
+    EXPECT_EQ(9u, h.pos()); // abcde, 3×Oriya, unfinished Ethiopic OK, and #9 Q is bad
+}
+
+
+///
+/// UTF-8: abrupt end 2/3
+/// Bhv fixed, BYTE_NEXT at bad byte
+///
+TEST (Error, Utf8Unfinished23)
+{
+    std::string s = "abcde" "\xE0\xAC\x8A" "\xE1\x8A" "Q";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"abcde" "\u0B0A\u263A" "Q", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
+    EXPECT_EQ(10u, h.pos()); // abcde, 3×Oriya, 2×unfinished Ethiopic OK, and #10 Q is bad
+}
+
+
+///
+/// UTF-8: long code of length 3
+///   E0 9F BF = 7FF encoded in three bytes
+/// Bhv fixed, CODE at start of CP
+///
+TEST (Error, Utf8LongCode3)
+{
+    std::string s = "xyz" "\xD1\xA6" "\xE0\x9F\xBF";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr OK, and #4 (7F in two bytes) is bad
+}
+
+
+///
+/// UTF-8: surrogate code of length 3
+///   (surrogate codes are OUTRIGHT BANNED in Unicode)
+///   ED BB B0 = DEF0, high sur
+/// Bhv fixed, CODE at start of CP
+///
+TEST (Error, Utf8Surrogate3)
+{
+    std::string s = "u" "\xD1\xA6" "\xED\xBB\xB0";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"u" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
+    EXPECT_EQ(3u, h.pos()); // u, 2×Cyr OK, and #3 (high-sur in UTF-8) is bad
 }
