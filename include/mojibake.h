@@ -276,6 +276,31 @@ namespace mojibake {
         return r;
     }
 
+#define MOJIBAKE_IMPLEMENT_TO_X_1(Name, Char, Encoding1) \
+        template <class To,   \
+                  class Enc = typename detail::ContUtfTraits<To>::Enc,  \
+                  class Enc1 = Encoding1> \
+        inline To Name(const Char* from) { \
+            std::basic_string_view from1{from};  \
+            return Name<To>(from1);  \
+        }
+
+#if __cplusplus >= 202002L
+    #define MOJIBAKE_IMPLEMENT_TO_X_ALL(Name) \
+        MOJIBAKE_IMPLEMENT_TO_X_1(Name, char, Utf8) \
+        MOJIBAKE_IMPLEMENT_TO_X_1(Name, char8_t, Utf8) \
+        MOJIBAKE_IMPLEMENT_TO_X_1(Name, char16_t, Utf16) \
+        MOJIBAKE_IMPLEMENT_TO_X_1(Name, wchar_t, typename detail::UtfTraits<wchar_t>::Enc) \
+        MOJIBAKE_IMPLEMENT_TO_X_1(Name, char32_t, Utf32)
+#else
+    #define MOJIBAKE_IMPLEMENT_TO_X_ALL(Name) \
+        MOJIBAKE_IMPLEMENT_TO_X_1(Name, char, Utf8) \
+        MOJIBAKE_IMPLEMENT_TO_X_1(Name, char16_t, Utf16) \
+        MOJIBAKE_IMPLEMENT_TO_X_1(Name, wchar_t, typename detail::UtfTraits<wchar_t>::Enc) \
+        MOJIBAKE_IMPLEMENT_TO_X_1(Name, char32_t, Utf32)
+#endif
+
+
     ///
     /// Same, mojibake just skipped
     ///
@@ -289,6 +314,9 @@ namespace mojibake {
         return to<To, From, Sk, Enc2, Enc1>(from);
     }
 
+    // Implement toS for char’s
+    MOJIBAKE_IMPLEMENT_TO_X_ALL(toS)
+
     ///
     /// Same, mojibake quietly displayed
     ///
@@ -301,6 +329,9 @@ namespace mojibake {
         using Mo = mojibake::handler::Moji<It>;
         return to<To, From, Mo, Enc2, Enc1>(from);
     }
+
+    // Implement toM for char’s
+    MOJIBAKE_IMPLEMENT_TO_X_ALL(toM)
 
     ///
     /// Check for string validity

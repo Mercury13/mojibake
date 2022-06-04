@@ -823,6 +823,14 @@ TEST (toS, Utf16Bad)
 }
 
 
+TEST (toS, Utf16ConstChar)
+{
+    const char* s = "abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85";
+    auto r = mojibake::toS<std::u32string>(s);
+    EXPECT_EQ(U"abc\u040B\u1234\U00012345", r);
+}
+
+
 /////
 /////  mojibake::toM ///////////////////////////////////////////////////////////
 /////
