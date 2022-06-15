@@ -1581,3 +1581,43 @@ TEST (Error, Utf8EightyByte2)
     EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
     EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr, and #5 is bad byte
 }
+
+
+///// mojibake::simpleCaseFold /////////////////////////////////////////////////
+
+
+TEST (SimpleCaseFold, SomeChars)
+{
+    // Missing
+    EXPECT_EQ(0u, mojibake::simpleCaseFold(0));
+    // Simple Latin (bicameral)
+    EXPECT_EQ(U'q', mojibake::simpleCaseFold('q'));
+    // Smth from Cyrillic (bicameral)
+    EXPECT_EQ(0x047Fu, mojibake::simpleCaseFold(0x047E));
+    // Smth from Kannada (unicameral)
+    EXPECT_EQ(0x0C9Bu, mojibake::simpleCaseFold(0x0C9B));
+    // Complex Greek (to ensure simplicity)
+    EXPECT_EQ(0x1FA4u, mojibake::simpleCaseFold(0x1FAC));
+    // Cherokee (lo → hi, unlike most scripts)
+    EXPECT_EQ(0x13DCu, mojibake::simpleCaseFold(0xABAC));
+    // Adlam (last bicameral)
+    EXPECT_EQ(0x1E92Du, mojibake::simpleCaseFold(0x1E90B));
+    // Just limit
+    EXPECT_EQ(0x1E93Fu, mojibake::simpleCaseFold(0x1E93F));
+    // More than limit
+    EXPECT_EQ(0x1E940u, mojibake::simpleCaseFold(0x1E940));
+}
+
+
+TEST (SimpleCaseFold, Container)
+{
+    std::string_view input = "\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
+    auto r = mojibake::simpleCaseFold<std::u16string>(input);
+    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+}
+
+
+TEST (SimpleCaseFold, ConstChar)
+{
+
+}

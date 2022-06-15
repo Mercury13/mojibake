@@ -11,9 +11,11 @@ win32-g++ {
 SOURCES += \
     ../GoogleTest/src/gtest-all.cc \
     ../GoogleTest/src/gtest_main.cc \
+    ../include/cpp/auto_casefold.cpp \
     test_Mojibake.cpp
 
 HEADERS += \
+    ../include/internal/auto.hpp \
     ../include/mojibake.h \
     ../include/internal/detail.hpp
 
