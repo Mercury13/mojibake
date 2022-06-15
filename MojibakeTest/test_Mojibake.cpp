@@ -1617,7 +1617,18 @@ TEST (SimpleCaseFold, Container)
 }
 
 
+TEST (SimpleCaseFold, Container2)
+{
+    std::string_view input = "\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
+    std::u16string r;
+    mojibake::simpleCaseFold<std::u16string>(input, r);
+    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+}
+
+
 TEST (SimpleCaseFold, ConstChar)
 {
-
+    const char* input = "\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
+    auto r = mojibake::simpleCaseFold<std::u16string>(input);
+    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
 }
