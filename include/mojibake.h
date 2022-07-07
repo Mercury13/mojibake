@@ -326,7 +326,9 @@ namespace mojibake {
 
     ///
     /// Check for string validity
-    ///
+    /// @return [+] all CPs are well-encoded, and are
+    ///              allocated, unallocated, reserved, private-use, noncharacters
+    ///         [-] at least one CP is badly-encoded, surrogate, too high
     template <class Cont,
               class Enc = typename detail::ContUtfTraits<Cont>::Enc>
     bool isValid(const Cont& cont)
