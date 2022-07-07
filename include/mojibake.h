@@ -38,9 +38,15 @@ namespace mojibake {
     constexpr char32_t U16_2WORD_MIN = 0x10000;
     constexpr char32_t U16_2WORD_MAX = UNICODE_MAX;
 
-    class Utf8  { public: using Ch = char; };
-    class Utf16 { public: using Ch = char16_t; };
-    class Utf32 { public: using Ch = char32_t; };
+    struct Utf8  { using Ch = char; };
+    struct Utf16 { using Ch = char16_t; };
+    struct Utf32 { using Ch = char32_t; };
+
+    /// @warning  Reimplement to true for limited iterators
+    template <class Iterator>
+    struct IsLimited {
+        static constexpr bool value = false;
+    };
 
     ///
     /// @return [+] codepoint is good: allocated, unallocated, reserved,
@@ -124,18 +130,19 @@ namespace mojibake {
     /// @param [in,out]  it   iterator
     /// @param [in]      cp   code point, SHOULD BE GOOD
     /// @warning  Bhv on bad cp is implementation-specific
+    /// @return [+] was put [-] no room
     ///
     template <class It,
               class Enc = typename detail::ItUtfTraits<It>::Enc,
               class = std::void_t<typename std::iterator_traits<It>::value_type>>
-    inline void put(It& it, char32_t cp)
-        { detail::ItEnc<It, Enc>::put(it, cp); }
+    inline bool put(It& it, char32_t cp)
+        { return detail::ItEnc<It, Enc>::put(it, cp); }
 
     template <class Enc,
               class It,
               class = std::void_t<typename std::iterator_traits<It>::value_type>>
-    inline void put(It& it, char32_t cp)
-        { detail::ItEnc<It, Enc>::put(it, cp); }
+    inline bool put(It& it, char32_t cp)
+        { return detail::ItEnc<It, Enc>::put(it, cp); }
 
 
     ///
