@@ -509,8 +509,8 @@ namespace mojibake {
         constexpr LimitedIterator(It aCurr, It aEnd) : curr(aCurr), end(aEnd) {}
         constexpr LimitedIterator(It aCurr, size_t size) : curr(aCurr), end(aCurr + size) {}
         constexpr LimitedIterator& operator ++() { ++curr; return *this; }
-        auto& operator * () const { return *curr; }
-        auto operator -> () const { return &*curr; }
+        constexpr auto& operator * () const { return *curr; }
+        constexpr auto operator -> () const { return &*curr; }
     };
 
     template <class UnderIt>
