@@ -157,6 +157,12 @@ namespace detail {
     template <class It, class Enc>
     class ItEnc;
 
+#define MJ_CHECK_REM(num) \
+    if constexpr (IteratorLimit<It>::isLimited) {    \
+        if (IteratorLimit<It>::remainder(it) == 0)   \
+            return false;                            \
+    }
+
     template <class It>
     class ItEnc<It, Utf32>
     {
@@ -164,10 +170,7 @@ namespace detail {
         static inline bool put(It& it, char32_t cp)
             noexcept (noexcept(*it = cp) && noexcept (++it))
         {
-            if constexpr (IteratorLimit<It>::isLimited) {
-                /// @todo [urgent] What to do?
-                return false;
-            }
+            MJ_CHECK_REM(1)
             *it = cp;
             ++it;
             return true;
@@ -266,9 +269,11 @@ namespace detail {
             noexcept (noexcept(*it = cp) && noexcept (++it))
     {
         if (cp < U16_2WORD_MIN) CPP20_LIKELY {   // 1 word
+            MJ_CHECK_REM(1)
             *(it) = static_cast<wchar_t>(cp);
             ++it;
         } else if (cp <= U16_2WORD_MAX) CPP20_UNLIKELY { // 2 words
+            MJ_CHECK_REM(2)
             cp -= U16_2WORD_MIN;
             const wchar_t lo10 = cp & 0x3FF;
             const wchar_t hi10 = cp >> 10;
@@ -372,17 +377,21 @@ namespace detail {
     {
         if (cp <= U8_2BYTE_MAX) CPP20_LIKELY {  // 1 or 2 bytes, the most frequent case
             if (cp <= U8_1BYTE_MAX) {  // 1 byte
+                MJ_CHECK_REM(1)
                 *it = cp;  ++it;
             } else { // 2 bytes
+                MJ_CHECK_REM(2)
                 *it     = (cp >> 6)   | 0xC0;
                 *(++it) = (cp & 0x3F) | 0x80;  ++it;
             }
         } else {  // 3 or 4 bytes
             if (cp <= U8_3BYTE_MAX) {  // 3 bytes
+                MJ_CHECK_REM(3)
                 *it     =  (cp >> 12)        | 0xE0;
                 *(++it) = ((cp >> 6) & 0x3F) | 0x80;
                 *(++it) =  (cp       & 0x3F) | 0x80;  ++it;
             } else {    // 4 bytes
+                MJ_CHECK_REM(4)
                 *it     = ((cp >> 18) & 0x07) | 0xF0;
                 *(++it) = ((cp >> 12) & 0x3F) | 0x80;
                 *(++it) = ((cp >> 6)  & 0x3F) | 0x80;
@@ -507,6 +516,7 @@ namespace detail {
 #undef MJ_PUT_GOTO
 #undef MJ_PUT_BRK
 #undef MJ_PUT_HALTSTMT
+#undef MJ_CHECK_REM
 
     template <class It>
     bool ItEnc<It, Utf8>::isValid(It p, It end)
