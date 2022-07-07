@@ -523,6 +523,34 @@ namespace mojibake {
 //    template <class To, class From>
 //    To to(const From& from);
 
+    ///
+    /// Conversion to limited buffer
+    ///
+    template <class From, class ItTo, class Mjh,
+              class Enc1 = typename detail::ContUtfTraits<From>::Enc,
+              class Enc2 = typename detail::ItUtfTraits<ItTo>::Enc>
+    ItTo copyLim(const From& from, ItTo beg, ItTo end, const Mjh& onMojibake = Mjh{})
+    {
+        LimitedIterator it(beg, end);
+        using It1 = decltype(std::begin(from));
+        using It2 = decltype(it);
+        return copy<It1, It2, Enc1, Enc2, Mjh>(std::begin(from), std::end(from), it, onMojibake);
+    }
+
+    ///
+    /// Conversion to limited buffer
+    ///
+    template <class From, class ItTo, class Mjh,
+              class Enc1 = typename detail::ContUtfTraits<From>::Enc,
+              class Enc2 = typename detail::ItUtfTraits<ItTo>::Enc>
+    ItTo copyLim(const From& from, ItTo beg, size_t size, const Mjh& onMojibake = Mjh{})
+    {
+        LimitedIterator it(beg, size);
+        using It1 = decltype(std::begin(from));
+        using It2 = decltype(it);
+        return copy<It1, It2, Enc1, Enc2, Mjh>(std::begin(from), std::end(from), it, onMojibake);
+    }
+
 }   // namespace mojibake
 
 
