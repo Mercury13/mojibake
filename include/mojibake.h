@@ -44,8 +44,9 @@ namespace mojibake {
 
     /// @warning  Reimplement to true for limited iterators
     template <class Iterator>
-    struct IsLimited {
-        static constexpr bool value = false;
+    struct IteratorLimit {
+        static constexpr bool isLimited = false;
+        constexpr size_t remainder(const Iterator&) { return 10; }
     };
 
     ///

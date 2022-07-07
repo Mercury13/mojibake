@@ -164,7 +164,7 @@ namespace detail {
         static inline bool put(It& it, char32_t cp)
             noexcept (noexcept(*it = cp) && noexcept (++it))
         {
-            if constexpr (IsLimited<It>::value) {
+            if constexpr (IteratorLimit<It>::isLimited) {
                 /// @todo [urgent] What to do?
                 return false;
             }
@@ -224,13 +224,13 @@ namespace detail {
     }
 
 #define MJ_PUT_HALTSTMT(what, Haltstmt) \
-            if constexpr (IsLimited<It2>::value) {  \
+            if constexpr (IteratorLimit<It2>::isLimited) {  \
                 if (!ItEnc<It2, Enc2>::put(dest, what))  \
                     Haltstmt;                            \
             } else {                                     \
                 ItEnc<It2, Enc2>::put(dest, what);       \
             }
-#define MJ_PUT_BRK(what)   MJ_PUT_HALTSTMT(what, break)
+#define  MJ_PUT_BRK(what)  MJ_PUT_HALTSTMT(what, break)
 #define MJ_PUT_GOTO(what)  MJ_PUT_HALTSTMT(what, goto brk)
 
     template <class It> template <class It2, class Enc2, class Mjh>
