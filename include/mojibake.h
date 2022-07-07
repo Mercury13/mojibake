@@ -501,6 +501,25 @@ namespace mojibake {
     template <class Func>
     Utf32CallIterator(const Func&) -> Utf32CallIterator<Func>;
 
+    template <class It>
+    struct LimitedIterator {
+        It curr;
+        const It end;
+
+        constexpr LimitedIterator(It aCurr, It aEnd) : curr(aCurr), end(aEnd) {}
+        constexpr LimitedIterator(It aCurr, size_t size) : curr(aCurr), end(aCurr + size) {}
+        constexpr LimitedIterator& operator ++() { ++curr; return *this; }
+        auto& operator * () const { return *curr; }
+        auto operator -> () const { return &*curr; }
+    };
+
+    template <class UnderIt>
+    struct IteratorLimit<LimitedIterator<UnderIt>> {
+        using It = LimitedIterator<UnderIt>;
+        static constexpr bool isLimited = true;
+        constexpr size_t remainder(const It& x) { return x.end - x.curr; }
+    };
+
 //    template <class To, class From>
 //    To to(const From& from);
 
@@ -566,6 +585,17 @@ namespace std {
         using value_type = typename CI::value_type;
         using pointer = CI*;
         using reference = CI&;
+        using iterator_category = forward_iterator_tag;
+    };
+
+    template <class UnderIt>
+    class iterator_traits<mojibake::LimitedIterator<UnderIt>>
+    {
+    public:
+        using difference_type  = typename std::iterator_traits<UnderIt>::difference_type;
+        using value_type       = typename std::iterator_traits<UnderIt>::value_type;
+        using pointer          = typename std::iterator_traits<UnderIt>::pointer;
+        using reference        = typename std::iterator_traits<UnderIt>::reference;
         using iterator_category = forward_iterator_tag;
     };
 
