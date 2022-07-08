@@ -1663,14 +1663,127 @@ TEST (CopyLim, SimpleBegLen)
 }
 
 
-//TEST (CopyLim, U32Lim)
-//{
-//    std::u16string_view src = u"abc" "\u1234" "\U00012345" "def";
-//    char32_t dest[4];
-//    std::fill(std::begin(dest), std::end(dest), 'Q');
-//    auto r = mojibake::copyLimM(src, std::begin(dest), std::end(dest));
-//    EXPECT_EQ(r);
+///
+/// UTF-32: every CP is a single unit, just check that it stops
+///
+TEST (CopyLim, U32Lim)
+{
+    std::u16string_view src = u"abc" "\u1234" "\U00012345" "def";
+    char32_t dest[8];
+    std::fill(std::begin(dest), std::end(dest), 'W');
+    auto r = mojibake::copyLimM(src, dest, dest + 4);
+    EXPECT_EQ(dest + 4, r);
+    EXPECT_EQ(U'W', *r);
 
-//    *r = '\0';
-//    EXPECT_STREQ("abc" "\u1234" "\U00012345" "def", dest);
-//}
+    *r = '\0';
+    std::u32string_view expected = U"abc" "\u1234";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// UTF-16: stop at 1-word CPs
+///
+TEST (CopyLim, U16Bad1)
+{
+    std::u32string_view src = U"АБВГДЕЁ";
+    char16_t dest[8];
+    std::fill(std::begin(dest), std::end(dest), 'S');
+    auto r = mojibake::copyLimM(src, dest, dest + 4);
+    EXPECT_EQ(dest + 4, r);
+    EXPECT_EQ('S', *r);
+
+    *r = '\0';
+    std::u16string_view expected = u"АБВГ";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// UTF-16: stop at 2-word CPs when only 1 byte left
+///
+TEST (CopyLim, U16Bad2)
+{
+    std::u32string_view src = U"АБ" "\U00012345" "\U00023456" "abc";
+    char16_t dest[8];
+    std::fill(std::begin(dest), std::end(dest), 'D');
+    auto r = mojibake::copyLimM(src, dest, dest + 5);
+    EXPECT_EQ(dest + 4, r);
+    EXPECT_EQ('D', *r);
+
+    *r = '\0';
+    std::u16string_view expected = u"АБ" "\U00012345";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// UTF-16: stop at 2-word CPs when it just fits
+///
+TEST (CopyLim, U16Ok2)
+{
+    std::u32string_view src = U"АБ" "\U00012345" "\U00023456" "\U00034567" "abc";
+    char16_t dest[8];
+    std::fill(std::begin(dest), std::end(dest), 'Z');
+    auto r = mojibake::copyLimM(src, dest, dest + 6);
+    EXPECT_EQ(dest + 6, r);
+    EXPECT_EQ('Z', *r);
+
+    *r = '\0';
+    std::u16string_view expected = u"АБ" "\U00012345" "\U00023456";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// UTF-8: stop at 1-byte CPs
+///
+TEST (CopyLim, U8Bad1)
+{
+    std::u32string_view src = U"abcdefgh";
+    char dest[8];
+    std::fill(std::begin(dest), std::end(dest), 'E');
+    auto r = mojibake::copyLimM(src, dest, dest + 4);
+    EXPECT_EQ(dest + 4, r);
+    EXPECT_EQ('E', *r);
+
+    *r = '\0';
+    std::string_view expected = "abcd";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// UTF-8: stop at 2-byte CPs: 1 byte left
+///
+TEST (CopyLim, U8Bad2)
+{
+    std::u32string_view src = U"АБВГДЕЁЖ";
+    char dest[8];
+    std::fill(std::begin(dest), std::end(dest), 'Y');
+    auto r = mojibake::copyLimM(src, dest, dest + 7);
+    EXPECT_EQ(dest + 6, r);
+    EXPECT_EQ('Y', *r);
+
+    *r = '\0';
+    std::string_view expected = "АБВ";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// UTF-8: stop at 2-byte CPs: just fits
+///
+TEST (CopyLim, U8Ok2)
+{
+    std::u32string_view src = U"АБВГДЕЁЖ";
+    char dest[10];
+    std::fill(std::begin(dest), std::end(dest), 'U');
+    auto r = mojibake::copyLimM(src, dest, dest + 8);
+    EXPECT_EQ(dest + 8, r);
+    EXPECT_EQ('U', *r);
+
+    *r = '\0';
+    std::string_view expected = "АБВГ";
+    EXPECT_EQ(expected, dest);
+}

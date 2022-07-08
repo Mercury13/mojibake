@@ -157,10 +157,11 @@ namespace detail {
     template <class It, class Enc>
     class ItEnc;
 
+// Checks remainder
 #define MJ_CHECK_REM(num) \
-    if constexpr (IteratorLimit<It>::isLimited) {    \
-        if (IteratorLimit<It>::remainder(it) == 0)   \
-            return false;                            \
+    if constexpr (IteratorLimit<It>::isLimited) {             \
+        if (IteratorLimit<It>::remainder(it) <= ((num) - 1))  \
+            return false;                                     \
     }
 
     template <class It>
