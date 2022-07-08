@@ -46,7 +46,7 @@ namespace mojibake {
     template <class Iterator>
     struct IteratorLimit {
         static constexpr bool isLimited = false;
-        constexpr size_t remainder(const Iterator&) { return 10; }
+        static constexpr size_t remainder(const Iterator&) { return 10; }
     };
 
     ///
@@ -161,7 +161,7 @@ namespace mojibake {
         return detail::ItEnc<It1, Enc1>::template copy<It2, Enc2, Mjh>(beg, end, dest, onMojibake);
     }
 
-    template <class Enc1, class Enc2,  class Mjh, class It1, class It2,
+    template <class Enc1, class Enc2, class Mjh, class It1, class It2,
               class = std::void_t<typename std::iterator_traits<It1>::value_type>,
               class = std::void_t<typename std::iterator_traits<It2>::value_type>>
     inline It2 copy(It1 beg, It1 end, It2 dest, const Mjh& onMojibake = Mjh{})
@@ -517,16 +517,14 @@ namespace mojibake {
     struct IteratorLimit<LimitedIterator<UnderIt>> {
         using It = LimitedIterator<UnderIt>;
         static constexpr bool isLimited = true;
-        constexpr size_t remainder(const It& x) { return x.end - x.curr; }
+        static constexpr size_t remainder(const It& x) { return x.end - x.curr; }
     };
-
-//    template <class To, class From>
-//    To to(const From& from);
 
     ///
     /// Conversion to limited buffer
+    /// DOES NOT put trailing zero
     ///
-    template <class From, class ItTo, class Mjh,
+    template <class Mjh, class From, class ItTo,
               class Enc1 = typename detail::ContUtfTraits<From>::Enc,
               class Enc2 = typename detail::ItUtfTraits<ItTo>::Enc>
     ItTo copyLim(const From& from, ItTo beg, ItTo end, const Mjh& onMojibake = Mjh{})
@@ -534,13 +532,13 @@ namespace mojibake {
         LimitedIterator it(beg, end);
         using It1 = decltype(std::begin(from));
         using It2 = decltype(it);
-        return copy<It1, It2, Enc1, Enc2, Mjh>(std::begin(from), std::end(from), it, onMojibake);
+        return copy<Enc1, Enc2, Mjh, It1, It2>(std::begin(from), std::end(from), it, onMojibake).curr;
     }
 
     ///
-    /// Conversion to limited buffer
+    /// @overload   beg/size instead of beg/end
     ///
-    template <class From, class ItTo, class Mjh,
+    template <class Mjh, class From, class ItTo,
               class Enc1 = typename detail::ContUtfTraits<From>::Enc,
               class Enc2 = typename detail::ItUtfTraits<ItTo>::Enc>
     ItTo copyLim(const From& from, ItTo beg, size_t size, const Mjh& onMojibake = Mjh{})
@@ -548,7 +546,61 @@ namespace mojibake {
         LimitedIterator it(beg, size);
         using It1 = decltype(std::begin(from));
         using It2 = decltype(it);
-        return copy<It1, It2, Enc1, Enc2, Mjh>(std::begin(from), std::end(from), it, onMojibake);
+        return copy<Enc1, Enc2, Mjh, It1, It2>(std::begin(from), std::end(from), it, onMojibake).curr;
+    }
+
+    ///
+    /// Conversion to limited buffer; skip bad codepoints
+    /// DOES NOT put trailing zero
+    ///
+    template <class From, class ItTo,
+              class Enc1 = typename detail::ContUtfTraits<From>::Enc,
+              class Enc2 = typename detail::ItUtfTraits<ItTo>::Enc>
+    inline ItTo copyLimS(const From& from, ItTo beg, ItTo end)
+    {
+        using It1 = decltype(std::begin(from));
+        using Mjh = handler::Skip<It1>;
+        return copyLim<Mjh, From, ItTo, Enc1, Enc2>(from, beg, end);
+    }
+
+    ///
+    /// @overload   beg/size instead of beg/end
+    ///
+    template <class From, class ItTo,
+              class Enc1 = typename detail::ContUtfTraits<From>::Enc,
+              class Enc2 = typename detail::ItUtfTraits<ItTo>::Enc>
+    inline ItTo copyLimS(const From& from, ItTo beg, size_t size)
+    {
+        using It1 = decltype(std::begin(from));
+        using Mjh = handler::Skip<It1>;
+        return copyLim<Mjh, From, ItTo, Enc1, Enc2>(from, beg, size);
+    }
+
+    ///
+    /// Conversion to limited buffer; write mojibake character
+    /// DOES NOT put trailing zero
+    ///
+    template <class From, class ItTo,
+              class Enc1 = typename detail::ContUtfTraits<From>::Enc,
+              class Enc2 = typename detail::ItUtfTraits<ItTo>::Enc>
+    inline ItTo copyLimM(const From& from, ItTo beg, ItTo end)
+    {
+        using It1 = decltype(std::begin(from));
+        using Mjh = handler::Moji<It1>;
+        return copyLim<Mjh, From, ItTo, Enc1, Enc2>(from, beg, end);
+    }
+
+    ///
+    /// @overload   beg/size instead of beg/end
+    ///
+    template <class From, class ItTo,
+              class Enc1 = typename detail::ContUtfTraits<From>::Enc,
+              class Enc2 = typename detail::ItUtfTraits<ItTo>::Enc>
+    inline ItTo copyLimM(const From& from, ItTo beg, size_t size)
+    {
+        using It1 = decltype(std::begin(from));
+        using Mjh = handler::Moji<It1>;
+        return copyLim<Mjh, From, ItTo, Enc1, Enc2>(from, beg, size);
     }
 
 }   // namespace mojibake

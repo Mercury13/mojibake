@@ -1632,3 +1632,45 @@ TEST (SimpleCaseFold, ConstChar)
     auto r = mojibake::simpleCaseFold<std::u16string>(input);
     EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
 }
+
+
+///// mojibake::copyLim ////////////////////////////////////////////////////////
+
+
+TEST (CopyLim, SimpleBegEnd)
+{
+    std::u32string_view src = U"abc" "\u1234" "\U00012345" "def";
+    char dest[30];
+    std::fill(std::begin(dest), std::end(dest), 'Q');
+    auto r = mojibake::copyLimM(src, std::begin(dest), std::end(dest));
+    EXPECT_EQ('Q', *r);
+
+    *r = '\0';
+    EXPECT_STREQ("abc" "\u1234" "\U00012345" "def", dest);
+}
+
+
+TEST (CopyLim, SimpleBegLen)
+{
+    std::u32string_view src = U"abc" "\u1234" "\U00012345" "def";
+    char dest[30];
+    std::fill(std::begin(dest), std::end(dest), 'Q');
+    auto r = mojibake::copyLimM(src, std::begin(dest), std::size(dest));
+    EXPECT_EQ('Q', *r);
+
+    *r = '\0';
+    EXPECT_STREQ("abc" "\u1234" "\U00012345" "def", dest);
+}
+
+
+//TEST (CopyLim, U32Lim)
+//{
+//    std::u16string_view src = u"abc" "\u1234" "\U00012345" "def";
+//    char32_t dest[4];
+//    std::fill(std::begin(dest), std::end(dest), 'Q');
+//    auto r = mojibake::copyLimM(src, std::begin(dest), std::end(dest));
+//    EXPECT_EQ(r);
+
+//    *r = '\0';
+//    EXPECT_STREQ("abc" "\u1234" "\U00012345" "def", dest);
+//}
