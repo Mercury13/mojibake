@@ -1895,3 +1895,80 @@ TEST (CopyLim, U8Ok4)
     std::string_view expected = "😀😁😂";
     EXPECT_EQ(expected, dest);
 }
+
+
+///
+/// Test this bhv of Skip:
+/// 3-byte mojibake EF BF BD does not fit, but the next char fits
+///
+TEST (CopyLim, SkipMojibakeBadCharacterFits)
+{
+    char32_t src1[] { 'a', 'b', 'c', 0x12345678, 'd', 'e', 'f' };
+    std::u32string_view src{ src1, std::size(src1) };
+    char dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'K');
+    auto r = mojibake::copyLimS(src, dest, 4);
+    EXPECT_EQ(dest + 4, r);
+    EXPECT_EQ('K', *r);\
+
+    *r = '\0';
+    std::string_view expected = "abcd";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// Test this bhv of Skip:
+/// Same but we write mojibake
+///
+TEST (CopyLim, U8MojibakeDoesNotFit)
+{
+    char32_t src1[] { 'a', 'b', 'c', 0x12345678, 'd', 'e', 'f' };
+    std::u32string_view src{ src1, std::size(src1) };
+    char dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'N');
+    auto r = mojibake::copyLimM(src, dest, 4);
+    EXPECT_EQ(dest + 3, r);
+    EXPECT_EQ('N', *r);\
+
+    *r = '\0';
+    std::string_view expected = "abc";
+    EXPECT_EQ(expected, dest);
+}
+
+///
+/// Same but mojibake just fits
+///
+TEST (CopyLim, U8MojibakeJustFits)
+{
+    char32_t src1[] { 'a', 'b', 'c', 0x12345678, 'd', 'e', 'f' };
+    std::u32string_view src{ src1, std::size(src1) };
+    char dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'N');
+    auto r = mojibake::copyLimM(src, dest, 6);
+    EXPECT_EQ(dest + 6, r);
+    EXPECT_EQ('N', *r);\
+
+    *r = '\0';
+    std::string_view expected = "abc\uFFFD";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// Same but mojibake just fits
+///
+TEST (CopyLim, U8MojibakeGoOn)
+{
+    char32_t src1[] { 'a', 'b', 'c', 0x12345678, 'd', 'e', 'f' };
+    std::u32string_view src{ src1, std::size(src1) };
+    char dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'N');
+    auto r = mojibake::copyLimM(src, dest, 7);
+    EXPECT_EQ(dest + 7, r);
+    EXPECT_EQ('N', *r);\
+
+    *r = '\0';
+    std::string_view expected = "abc\uFFFD" "d";
+    EXPECT_EQ(expected, dest);
+}
