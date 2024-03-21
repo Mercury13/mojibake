@@ -444,7 +444,8 @@ namespace detail {
         { return fallbackCount1(x); }
 #endif
 
-    constexpr bool isCont(unsigned char b) { return (b & 0xC0) == 0x80; }
+    /// @return [+] this byte means “continue UTF-8 codepoint”
+    constexpr bool isU8ContinueByte(unsigned char b) { return (b & 0xC0) == 0x80; }
 
     // We need this for current UTF-8 reading
     static_assert(std::numeric_limits<unsigned char>::radix == 2);
@@ -456,7 +457,7 @@ namespace detail {
     #define MJ_READCP \
                 if (p == end) goto abruptEnd;     \
                 byte2 = *p;                       \
-                if (!isCont(byte2)) goto badNext; \
+                if (!isU8ContinueByte(byte2)) goto badNext; \
                 ++p;
 
         for (; p != end;) {
@@ -499,7 +500,7 @@ namespace detail {
                     if (handleMojibake<Enc2>(cpStart, Event::BYTE_START, dest, onMojibake))
                         goto brk;
                     // Skip all continuation bytes
-                    while (p != end && isCont(*p))
+                    while (p != end && isU8ContinueByte(*p))
                         ++p;
                 } break;
             abruptEnd: CPP20_UNLIKELY {
@@ -533,7 +534,7 @@ namespace detail {
 #define MJ_READCP \
             if (p == end) return false; \
             byte1 = *p;  \
-            if (!isCont(byte1)) return false; \
+            if (!isU8ContinueByte(byte1)) return false; \
             ++p;
 
         for (; p != end;) {
