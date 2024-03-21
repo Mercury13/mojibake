@@ -1035,6 +1035,147 @@ TEST (CopyMH, BugOverload2)
 }
 
 
+
+
+/////
+/////  mojibake::copyQ /////////////////////////////////////////////////////////
+/////
+
+///
+/// Normal UTF-32
+///
+TEST (CopyQ, Utf32Normal)
+{
+    std::u32string_view s = U"abc\u040B\u1234\U00012345";
+    char buf[30];
+    auto end = mojibake::copyQ(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
+}
+
+
+///
+/// Bad UTF-32
+///
+TEST (CopyQ, Utf32Bad)
+{
+    std::u32string s = U"abc";
+    s.push_back(0x040B);
+    s.push_back(0x110000);  // Too high
+    s.push_back(0x1234);
+    s.push_back(0x12345);
+
+    EXPECT_EQ(7u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyQ(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("abc" "\xD0\x8B" U8_MOJ "\xE1\x88\xB4" "\xF0\x92\x8D\x85", r);
+}
+
+
+///
+/// Bad UTF-16
+///
+TEST (CopyQ, Utf16Bad)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyQ(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
+}
+
+
+///
+/// CopyMH — bhv in same encoding
+///
+TEST (CopyQ, SameEnc)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char16_t buf[30];
+
+    static_assert(std::is_same_v<
+            mojibake::detail::ContUtfTraits<decltype(s)>::Enc,
+            mojibake::detail::ItUtfTraits<decltype(std::begin(buf))>::Enc>,
+            "Should be the same encoding");
+
+    auto end = mojibake::copyQ(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(s, r);
+}
+
+
+///
+/// Programming using copy/paste proved bad :(
+///
+TEST (CopyQ, BugOverload1)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyQ<mojibake::Utf16, mojibake::Utf8>(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
+}
+
+
+///
+/// Same stuff, other overload
+///
+TEST (CopyQ, BugOverload2)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyQ<mojibake::Utf8>(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
+}
+
+
 /////
 /////  mojibake::toS ///////////////////////////////////////////////////////////
 /////
