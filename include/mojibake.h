@@ -275,6 +275,45 @@ namespace mojibake {
     }
 
     ///
+    /// Copies data to another, QUICK AND DIRTY
+    ///     We don’t have a funk what to do with bad characters
+    ///     (actually replaces with mojibake character)
+    /// So no mojibake handler
+    /// @warning  Does not recode when encoding is the same
+    /// @warning  Use if data is reliable, or it is of low importance like error messages
+    ///
+    template <class It1, class It2,
+              class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
+              class Enc2 = typename detail::ItUtfTraits<It2>::Enc,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyQ(It1 beg, It1 end, It2 dest)
+    {
+        if constexpr (std::is_same_v<Enc1, Enc2>) {
+            return std::copy(beg, end, dest);
+        } else {
+            return copyM<It1, It2, Enc1, Enc2>(beg, end, dest);
+        }
+    }
+
+    template <class Enc1, class Enc2, class It1, class It2,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyQ(It1 beg, It1 end, It2 dest)
+    {
+        return copyQ<It1, It2, Enc1, Enc2>(beg, end, dest);
+    }
+
+    template <class Enc2, class It1, class It2,
+              class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
+              class = std::void_t<typename std::iterator_traits<It1>::value_type>,
+              class = std::void_t<typename std::iterator_traits<It2>::value_type>>
+    inline It2 copyQ(It1 beg, It1 end, It2 dest)
+    {
+        return copyQ<It1, It2, Enc1, Enc2>(beg, end, dest);
+    }
+
+    ///
     /// Generic conversion
     ///
     template <class To, class From, class Mjh,
@@ -334,6 +373,35 @@ namespace mojibake {
     {
         std::basic_string_view from1{from};
         return toM<To, decltype(from1), Enc2, Enc1>(from1);
+    }
+
+    ///
+    /// Same, quick and dirty — when we don’t have a funk what to do with bad chars
+    /// @warning   Does not recode when encoding is the same
+    /// @warning   Use for
+    ///
+    template <class To, class From,
+              class Enc2 = typename detail::ContUtfTraits<To>::Enc,
+              class Enc1 = typename detail::ContUtfTraits<From>::Enc>
+    inline To toQ(const From& from)
+    {
+        To r;
+        std::back_insert_iterator it(r);
+        using It1 = decltype(std::begin(from));
+        using It2 = decltype(it);
+        /// @todo [mojibake,performance] How to check for append (beg, end) function?
+        copyQ<It1, It2, Enc1, Enc2>(std::begin(from), std::end(from), it);
+        return r;
+    }
+
+    /// Implementation for const char*
+    template <class To, class From,
+              class Enc2 = typename detail::ContUtfTraits<To>::Enc,
+              class Enc1 = typename detail::UtfTraits<From>::Enc>   // Also a SFINAE
+    inline To toQ(const From* from)
+    {
+        std::basic_string_view from1{from};
+        return toQ<To, decltype(from1), Enc2, Enc1>(from1);
     }
 
     ///

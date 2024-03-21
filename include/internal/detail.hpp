@@ -22,9 +22,11 @@ namespace detail {
     template <size_t Len>
     class LenTraits;
 
+    /// Iterator’s traits
     template <class It>
     using ItUtfTraits = UtfTraits<ChType<It>>;
 
+    /// Containter’s traits
     template <class Cont>
     using ContUtfTraits = UtfTraits<typename Cont::value_type>;
 
@@ -50,6 +52,12 @@ namespace detail {
 
     template<>
     class LenTraits<8> {
+    public:
+        using Enc = Utf32;
+    };
+
+    template<>
+    class LenTraits<16> {
     public:
         using Enc = Utf32;
     };

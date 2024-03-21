@@ -1005,6 +1005,28 @@ TEST (toM, Utf16Bad)
 }
 
 
+///
+/// const char* overload
+///
+TEST (toM, ConstCharOverload)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    auto r = mojibake::toM<std::string>(s.c_str());
+    EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
+}
+
+
 /////
 /////  mojibake::isValid ///////////////////////////////////////////////////////
 /////
