@@ -154,6 +154,7 @@ namespace detail {
         using Enc = Utf32;
     };
 
+    /// wchar_t’s encoding is deduced by its length
     template<>
     class UtfTraits<wchar_t>
     {
