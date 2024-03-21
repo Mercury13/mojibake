@@ -413,7 +413,8 @@ namespace mojibake {
     /// Check for string validity
     /// @return [+] all CPs are well-encoded, and are
     ///              allocated, unallocated, reserved, private-use, noncharacters
-    ///         [-] at least one CP is badly-encoded, surrogate, too high
+    ///         [-] at least one CP is surrogate, too high or badly-encoded
+    ///              (abruptly ends, too long, starts with continuation code unit)
     /// @warning Unallocated will eventually be reserved, then allocated.
     ///           And the function is quick and dirty, and does not have
     ///           a character base.
