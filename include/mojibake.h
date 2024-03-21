@@ -150,6 +150,9 @@ namespace mojibake {
     /// Copies data to another,
     /// REACTING APPROPRIATELY TO MOJIBAKE
     ///
+    /// @warning Even if encoding is the same, deserializes/checks/serializes
+    ///          codepoints.
+    ///
     template <class It1, class It2,
               class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
               class Enc2 = typename detail::ItUtfTraits<It2>::Enc,
@@ -279,7 +282,8 @@ namespace mojibake {
     ///     We don’t have a funk what to do with bad characters
     ///     (actually replaces with mojibake character)
     /// So no mojibake handler
-    /// @warning  Does not recode when encoding is the same
+    /// @warning  Used for extreme optimization of cross-platform or highly
+    ///             templated code, does not recode when encoding is the same
     /// @warning  Use if data is reliable, or it is of low importance like error messages
     ///
     template <class It1, class It2,
@@ -411,7 +415,8 @@ namespace mojibake {
     ///              allocated, unallocated, reserved, private-use, noncharacters
     ///         [-] at least one CP is badly-encoded, surrogate, too high
     /// @warning It’s possible to use noncharacters in strings, e.g. as weight
-    ///          for sorting, substitution char, error code etc.
+    ///          for sorting, substitution char, error code, stub that’s
+    ///          unlikely to appear in string etc.
     template <class Cont,
               class Enc = typename detail::ContUtfTraits<Cont>::Enc>
     bool isValid(const Cont& cont)
