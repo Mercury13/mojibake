@@ -624,6 +624,9 @@ namespace mojibake {
     ///
     /// Conversion to limited buffer; skip bad codepoints
     /// DOES NOT put trailing zero
+    /// @warning   No copyLimQ because of its limited usefulness:
+    ///            depending on system, we get incomplete codepoint,
+    ///            though copyLim’s aim is to get rid of those
     ///
     template <class From, class ItTo,
               class Enc1 = typename detail::ContUtfTraits<From>::Enc,
