@@ -2217,7 +2217,7 @@ TEST (CopyLim, U8MojibakeJustFits)
 
 
 ///
-/// Same but mojibake just fits
+/// Same but have 1 character left
 ///
 TEST (CopyLim, U8MojibakeGoOn)
 {
