@@ -169,7 +169,8 @@ namespace mojibake {
         return copy<It1, It2, Enc1, Enc2, Mjh>(beg, end, dest, onMojibake);
     }
 
-    template <class Enc2, class Mjh, class It1, class It2, class Enc1,
+    template <class Enc2, class Mjh, class It1, class It2,
+              class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
               class = std::void_t<typename std::iterator_traits<It1>::value_type>,
               class = std::void_t<typename std::iterator_traits<It2>::value_type>>
     inline It2 copy(It1 beg, It1 end, It2 dest, const Mjh& onMojibake = Mjh{})
@@ -179,7 +180,7 @@ namespace mojibake {
 
     ///
     /// Copies data to another, SKIPPING MOJIBAKE
-    /// So mo mojibake handler
+    /// So no mojibake handler
     ///
     template <class It1, class It2,
               class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
@@ -200,7 +201,8 @@ namespace mojibake {
         return copyS<It1, It2, Enc1, Enc2>(beg, end, dest);
     }
 
-    template <class Enc2, class It1, class It2, class Enc1,
+    template <class Enc2, class It1, class It2,
+              class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
               class = std::void_t<typename std::iterator_traits<It1>::value_type>,
               class = std::void_t<typename std::iterator_traits<It2>::value_type>>
     inline It2 copyS(It1 beg, It1 end, It2 dest)
@@ -210,7 +212,7 @@ namespace mojibake {
 
     ///
     /// Copies data to another, WRITING MOJIBAKE
-    /// So mo mojibake handler
+    /// So no mojibake handler
     ///
     template <class It1, class It2,
               class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
@@ -231,7 +233,8 @@ namespace mojibake {
         return copyM<It1, It2, Enc1, Enc2>(beg, end, dest);
     }
 
-    template <class Enc2, class It1, class It2, class Enc1,
+    template <class Enc2, class It1, class It2,
+              class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
               class = std::void_t<typename std::iterator_traits<It1>::value_type>,
               class = std::void_t<typename std::iterator_traits<It2>::value_type>>
     inline It2 copyM(It1 beg, It1 end, It2 dest)
@@ -241,7 +244,7 @@ namespace mojibake {
 
     ///
     /// Copies data to another, WRITING MOJIBAKE AND HALTING
-    /// So mo mojibake handler
+    /// So no mojibake handler
     ///
     template <class It1, class It2,
               class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
@@ -259,15 +262,16 @@ namespace mojibake {
               class = std::void_t<typename std::iterator_traits<It2>::value_type>>
     inline It2 copyMH(It1 beg, It1 end, It2 dest)
     {
-        return copyM<It1, It2, Enc1, Enc2>(beg, end, dest);
+        return copyMH<It1, It2, Enc1, Enc2>(beg, end, dest);
     }
 
-    template <class Enc2, class It1, class It2, class Enc1,
+    template <class Enc2, class It1, class It2,
+              class Enc1 = typename detail::ItUtfTraits<It1>::Enc,
               class = std::void_t<typename std::iterator_traits<It1>::value_type>,
               class = std::void_t<typename std::iterator_traits<It2>::value_type>>
     inline It2 copyMH(It1 beg, It1 end, It2 dest)
     {
-        return copyM<It1, It2, Enc1, Enc2>(beg, end, dest);
+        return copyMH<It1, It2, Enc1, Enc2>(beg, end, dest);
     }
 
     ///
@@ -305,7 +309,7 @@ namespace mojibake {
               class Enc1 = typename detail::UtfTraits<From>::Enc>   // Also a SFINAE
     inline To toS(const From* from)
     {
-        std::basic_string_view from1{from};  \
+        std::basic_string_view from1{from};
         return toS<To, decltype(from1), Enc2, Enc1>(from1);
     }
 
@@ -328,7 +332,7 @@ namespace mojibake {
               class Enc1 = typename detail::UtfTraits<From>::Enc>   // Also a SFINAE
     inline To toM(const From* from)
     {
-        std::basic_string_view from1{from};  \
+        std::basic_string_view from1{from};
         return toM<To, decltype(from1), Enc2, Enc1>(from1);
     }
 

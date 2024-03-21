@@ -405,6 +405,54 @@ TEST (CopyS, Utf8Bad)
 }
 
 
+///
+/// Bug was in copyMH, but test it
+///
+TEST (CopyS, BugOverload1)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyS<mojibake::Utf16, mojibake::Utf8>(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("abcd", r);
+}
+
+
+///
+/// Same stuff, other overload
+///
+TEST (CopyS, BugOverload2)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyS<mojibake::Utf8>(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("abcd", r);
+}
+
+
 /////
 /////  mojibake::copyM /////////////////////////////////////////////////////////
 /////
@@ -518,6 +566,58 @@ TEST (CopyM, Utf8_F0)
     auto end = mojibake::copyM(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ(U"ab\uFFFD\U00012345", r);
+}
+
+
+///
+/// Bug was in copyMH, but test it
+///
+TEST (CopyM, BugOverload1)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyM<mojibake::Utf16, mojibake::Utf8>(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    // WARNING: library behaves just this way, bhv may change
+    //   (I mean two mojibake characters at the end)
+    EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
+}
+
+
+///
+/// Same stuff, other overload
+///
+TEST (CopyM, BugOverload2)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyM<mojibake::Utf8>(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    // WARNING: library behaves just this way, bhv may change
+    //   (I mean two mojibake characters at the end)
+    EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
 }
 
 
@@ -791,6 +891,54 @@ TEST (CopyMH, Utf16Bad)
 
     char buf[30];
     auto end = mojibake::copyMH(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("a" U8_MOJ, r);
+}
+
+
+///
+/// Programming using copy/paste proved bad :(
+///
+TEST (CopyMH, BugOverload1)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyMH<mojibake::Utf16, mojibake::Utf8>(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ("a" U8_MOJ, r);
+}
+
+
+///
+/// Same stuff, other overload
+///
+TEST (CopyMH, BugOverload2)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char buf[30];
+    auto end = mojibake::copyMH<mojibake::Utf8>(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ("a" U8_MOJ, r);
 }
