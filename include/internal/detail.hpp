@@ -64,6 +64,7 @@ namespace detail {
 
     ///// UtfTraits ////////////////////////////////////////////////////////////
 
+    /// All char’s by default are UTF-8
     template<>
     class UtfTraits<char> {
     public:
@@ -96,6 +97,7 @@ namespace detail {
         using Enc = Utf16;
     };
 
+    /// All short’s by default are UTF-16
     template<>
     class UtfTraits<signed short> {
     public:
@@ -108,6 +110,7 @@ namespace detail {
         using Enc = Utf16;
     };
 
+    /// All int’s by default are UTF-16 or 32 depending on machine
     template<>
     class UtfTraits<signed int> {
     public:
@@ -126,6 +129,7 @@ namespace detail {
         using Enc = Utf32;
     };
 
+    /// All types longer than int are UTF-32
     template<>
     class UtfTraits<long> {
     public:
