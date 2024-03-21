@@ -1292,6 +1292,76 @@ TEST (toM, ConstCharOverload)
 
 
 /////
+/////  mojibake::toQ ///////////////////////////////////////////////////////////
+/////
+
+///
+/// Bad UTF-16
+///
+TEST (toQ, Utf16Bad)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    auto r = mojibake::toQ<std::string>(s);
+    EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
+}
+
+
+///
+/// const char* overload
+///
+TEST (toQ, ConstCharOverload)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    auto r = mojibake::toQ<std::string>(s.c_str());
+    EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
+}
+
+
+///
+/// Same encoding, funky version
+///
+TEST (toQ, SameEnc)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    auto r = mojibake::toQ<std::string, std::u16string, mojibake::Utf16>(s);
+    EXPECT_EQ("a" "\0" "b" "\0" "c" "\xAB\xCD" "d"sv, r);
+}
+
+
+/////
 /////  mojibake::isValid ///////////////////////////////////////////////////////
 /////
 

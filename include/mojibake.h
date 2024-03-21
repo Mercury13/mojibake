@@ -378,7 +378,8 @@ namespace mojibake {
     ///
     /// Same, quick and dirty — when we don’t have a funk what to do with bad chars
     /// @warning   Does not recode when encoding is the same
-    /// @warning   Use for
+    /// @warning   Use when data is surely good, or for low-importance strings
+    ///            like error messages
     ///
     template <class To, class From,
               class Enc2 = typename detail::ContUtfTraits<To>::Enc,
