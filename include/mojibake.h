@@ -414,9 +414,12 @@ namespace mojibake {
     /// @return [+] all CPs are well-encoded, and are
     ///              allocated, unallocated, reserved, private-use, noncharacters
     ///         [-] at least one CP is badly-encoded, surrogate, too high
+    /// @warning Unallocated will eventually be reserved, then allocated.
+    ///           And the function is quick and dirty, and does not have
+    ///           a character base.
     /// @warning It’s possible to use noncharacters in strings, e.g. as weight
-    ///          for sorting, substitution char, error code, stub that’s
-    ///          unlikely to appear in string etc.
+    ///           for sorting, substitution char, error code, special value
+    ///           that’s unlikely to appear in the wild etc.
     template <class Cont,
               class Enc = typename detail::ContUtfTraits<Cont>::Enc>
     bool isValid(const Cont& cont)
