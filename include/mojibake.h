@@ -417,6 +417,7 @@ namespace mojibake {
     /// @warning Unallocated will eventually be reserved, then allocated.
     ///           And the function is quick and dirty, and does not have
     ///           a character base.
+    /// @warning Private-use are not controlled by Consortium at all
     /// @warning It’s possible to use noncharacters in strings, e.g. as weight
     ///           for sorting, substitution char, error code, special value
     ///           that’s unlikely to appear in the wild etc.
