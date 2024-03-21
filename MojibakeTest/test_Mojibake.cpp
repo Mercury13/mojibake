@@ -453,6 +453,36 @@ TEST (CopyS, BugOverload2)
 }
 
 
+///
+/// CopyS — bhv in same encoding
+///
+TEST (CopyS, SameEnc)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char16_t buf[30];
+
+    static_assert(std::is_same_v<
+            mojibake::detail::ContUtfTraits<decltype(s)>::Enc,
+            mojibake::detail::ItUtfTraits<decltype(std::begin(buf))>::Enc>,
+            "Should be the same encoding");
+
+    auto end = mojibake::copyS(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(u"abcd", r);
+}
+
+
 /////
 /////  mojibake::copyM /////////////////////////////////////////////////////////
 /////
@@ -471,6 +501,7 @@ TEST (CopyM, Utf32Normal)
 
 // UTF-8 mojibake
 #define U8_MOJ "\xEF\xBF\xBD"
+#define U16_MOJ "\uFFFD"
 
 ///
 /// Bad UTF-32
@@ -618,6 +649,36 @@ TEST (CopyM, BugOverload2)
     // WARNING: library behaves just this way, bhv may change
     //   (I mean two mojibake characters at the end)
     EXPECT_EQ("a" U8_MOJ "b" U8_MOJ "c" U8_MOJ U8_MOJ "d", r);
+}
+
+
+///
+/// CopyM — bhv in same encoding
+///
+TEST (CopyM, SameEnc)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char16_t buf[30];
+
+    static_assert(std::is_same_v<
+            mojibake::detail::ContUtfTraits<decltype(s)>::Enc,
+            mojibake::detail::ItUtfTraits<decltype(std::begin(buf))>::Enc>,
+            "Should be the same encoding");
+
+    auto end = mojibake::copyM(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(u"a" U16_MOJ "b" U16_MOJ "c" U16_MOJ U16_MOJ "d", r);
 }
 
 
@@ -893,6 +954,36 @@ TEST (CopyMH, Utf16Bad)
     auto end = mojibake::copyMH(s.begin(), s.end(), buf);
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ("a" U8_MOJ, r);
+}
+
+
+///
+/// CopyMH — bhv in same encoding
+///
+TEST (CopyMH, SameEnc)
+{
+    std::u16string s;
+    s.push_back('a');
+    s.push_back(0xD900);    // Lone low surrogate
+    s.push_back('b');
+    s.push_back(0xDE00);    // Lone high surrogate
+    s.push_back('c');
+    s.push_back(0xD9AB);    // Double low surrogate
+    s.push_back(0xD9CD);
+    s.push_back('d');
+
+    EXPECT_EQ(8u, s.length());   // Should contain those chars
+
+    char16_t buf[30];
+
+    static_assert(std::is_same_v<
+            mojibake::detail::ContUtfTraits<decltype(s)>::Enc,
+            mojibake::detail::ItUtfTraits<decltype(std::begin(buf))>::Enc>,
+            "Should be the same encoding");
+
+    auto end = mojibake::copyMH(s.begin(), s.end(), buf);
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(u"a" U16_MOJ, r);
 }
 
 
