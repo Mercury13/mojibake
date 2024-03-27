@@ -2476,3 +2476,63 @@ TEST (CopyLim, U8MojibakeGoOn)
     std::string_view expected = "abc\uFFFD" "d";
     EXPECT_EQ(expected, dest);
 }
+
+
+///// ConvString ///////////////////////////////////////////////////////////////
+
+
+///
+/// Same types: e.g. char and char
+///
+TEST (ConvString, SameType)
+{
+    /// Banned bytes here
+    std::string_view s = "xyz" "\xD1\xA6" "\xFA\x81\x82\x93\x94\xA5\xB6" "u";
+    using Conv = mojibake::ConvString<char, char>;
+    Conv q(s);
+    static_assert(Conv::isStringView());
+    static_assert(!Conv::isConverted());
+    EXPECT_EQ(s, q.sv());
+    EXPECT_EQ(s.data(), q.data());
+}
+
+
+struct Byte {
+    unsigned char c;
+};
+
+///
+/// Close types
+///
+TEST (ConvString, CloseTypes)
+{
+    /// Banned bytes here
+    std::string_view s = "xyz" "\xD1\xA6" "\xFA\x81\x82\x93\x94\xA5\xB6" "u";
+    using Conv = mojibake::ConvString<Byte, char>;
+    Conv q(s);
+    static_assert(Conv::isStringView());
+    static_assert(!Conv::isConverted());
+    EXPECT_EQ(static_cast<const void*>(s.data()), static_cast<const void*>(q.data()));
+    EXPECT_EQ(s.length(), q.length());
+    // Cannot compare those sv’s, but equal data and length should be enough
+}
+
+
+///
+/// Really different types
+///
+TEST (ConvString, DiffTypes)
+{
+    /// Banned bytes here
+    std::string_view s = "xyz" "\xD1\xA6" "\xFA\x81\x82\x93\x94\xA5\xB6" "u";
+    using Conv = mojibake::ConvString<uint32_t, char>;
+    Conv q(s);
+    static_assert(Conv::isConverted());
+    static_assert(!Conv::isStringView());
+    // A single mojibake here: FFFD
+    static uint32_t cps[] { 'x', 'y', 'z', U'\u0466', U'\uFFFD', 'u' };
+
+    EXPECT_EQ(std::size(cps), q.length());
+    auto sv = q.sv();
+    EXPECT_TRUE(std::equal(std::begin(cps), std::end(cps), sv.begin(), sv.end()));
+}

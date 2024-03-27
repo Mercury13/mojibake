@@ -9,7 +9,7 @@
 
 #include <algorithm>
 #include <iterator>
-#include <limits>
+#include <type_traits>
 
 #if __cplusplus >= 202002L
     #include <bit>
@@ -121,9 +121,11 @@ namespace mojibake {
         };  // class Skip
 
     }   // namespace handler
+} // namespace mojibake
 
-    #include "internal/detail.hpp"
+#include "internal/detail.hpp"
 
+namespace mojibake {
     ///
     /// Puts code point to some iterator
     /// @tparam  It   iterator
@@ -693,7 +695,11 @@ namespace mojibake {
 
     template <class T>
     using EquivChar = typename detail::LenTraits<sizeof(T)>::EquivChar;
+} // namespace mojibake
 
+#include "internal/detail2.hpp"
+
+namespace mojibake {
     ///
     /// Class that converts constant string to new encoding:
     /// either small string_view, or a full string

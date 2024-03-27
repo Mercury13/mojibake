@@ -16,6 +16,7 @@ SOURCES += \
 
 HEADERS += \
     ../include/internal/auto.hpp \
+    ../include/internal/detail2.hpp \
     ../include/mojibake.h \
     ../include/internal/detail.hpp
 
