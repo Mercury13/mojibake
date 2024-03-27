@@ -703,6 +703,8 @@ namespace mojibake {
     ///
     /// Class that converts constant string to new encoding:
     /// either small string_view, or a full string
+    /// @warning  Uses quick-and-dirty conversion method,
+    ///           use for reliable or low-importance strings
     ///
     template <typename ToC, typename FromC>
     class ConvString :
