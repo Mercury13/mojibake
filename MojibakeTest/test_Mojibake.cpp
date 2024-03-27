@@ -2480,11 +2480,11 @@ TEST (CopyLim, U8MojibakeGoOn)
 
 ///// isAliasable //////////////////////////////////////////////////////////////
 
-struct Byte {
+struct OneByte {
     unsigned char c;
 };
 
-struct TwoByte {
+struct TwoBytes {
     unsigned char lo, hi;
 };
 
@@ -2494,8 +2494,8 @@ static_assert( mojibake::detail::isAliasable<char16_t, uint16_t>());
 static_assert( mojibake::detail::isAliasable<uint16_t, char16_t>());
 static_assert(!mojibake::detail::isAliasable<char32_t, uint16_t>());
 static_assert(!mojibake::detail::isAliasable<uint16_t, char32_t>());
-static_assert(!mojibake::detail::isAliasable<char16_t, TwoByte>());
-static_assert( mojibake::detail::isAliasable<TwoByte, char16_t>());
+static_assert(!mojibake::detail::isAliasable<char16_t, TwoBytes>());
+static_assert( mojibake::detail::isAliasable<TwoBytes, char16_t>());
 
 
 ///// ConvString ///////////////////////////////////////////////////////////////
@@ -2524,7 +2524,7 @@ TEST (ConvString, CloseTypes)
 {
     /// Banned bytes here
     std::string_view s = "xyz" "\xD1\xA6" "\xFA\x81\x82\x93\x94\xA5\xB6" "u";
-    using Conv = mojibake::ConvString<Byte, char>;
+    using Conv = mojibake::ConvString<OneByte, char>;
     Conv q(s);
     static_assert(Conv::isStringView());
     static_assert(!Conv::isConverted());
