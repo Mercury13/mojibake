@@ -2478,6 +2478,26 @@ TEST (CopyLim, U8MojibakeGoOn)
 }
 
 
+///// isAliasable //////////////////////////////////////////////////////////////
+
+struct Byte {
+    unsigned char c;
+};
+
+struct TwoByte {
+    unsigned char lo, hi;
+};
+
+// All false’s can turn to true on some strange machines
+static_assert (mojibake::detail::isAliasable<char, char>());
+static_assert( mojibake::detail::isAliasable<char16_t, uint16_t>());
+static_assert( mojibake::detail::isAliasable<uint16_t, char16_t>());
+static_assert(!mojibake::detail::isAliasable<char32_t, uint16_t>());
+static_assert(!mojibake::detail::isAliasable<uint16_t, char32_t>());
+static_assert(!mojibake::detail::isAliasable<char16_t, TwoByte>());
+static_assert( mojibake::detail::isAliasable<TwoByte, char16_t>());
+
+
 ///// ConvString ///////////////////////////////////////////////////////////////
 
 
@@ -2496,10 +2516,6 @@ TEST (ConvString, SameType)
     EXPECT_EQ(s.data(), q.data());
 }
 
-
-struct Byte {
-    unsigned char c;
-};
 
 ///
 /// Close types
