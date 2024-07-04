@@ -2552,3 +2552,45 @@ TEST (ConvString, DiffTypes)
     auto sv = q.sv();
     EXPECT_TRUE(std::equal(std::begin(cps), std::end(cps), sv.begin(), sv.end()));
 }
+
+
+///// Call iterators ///////////////////////////////////////////////////////////
+
+
+TEST (CallIterator, ToUtf8)
+{
+    std::string r;
+    auto func = [&r](char x) {
+        r += x;
+    };
+    std::u32string_view src = U"abc\u040B\u1234\U00012345";
+
+    mojibake::copyS(src.begin(), src.end(), mojibake::Utf8CallIterator(func));
+    EXPECT_EQ("abc\u040B\u1234\U00012345", r);
+}
+
+
+TEST (CallIterator, ToUtf16)
+{
+    std::u16string r;
+    auto func = [&r](char16_t x) {
+        r += x;
+    };
+    std::u32string_view src = U"abc\u040B\u1234\U00012345";
+
+    mojibake::copyS(src.begin(), src.end(), mojibake::Utf16CallIterator(func));
+    EXPECT_EQ(u"abc\u040B\u1234\U00012345", r);
+}
+
+
+TEST (CallIterator, ToUtf32)
+{
+    std::u32string r;
+    auto func = [&r](char32_t x) {
+        r += x;
+    };
+    std::u16string_view src = u"abc\u040B\u1234\U00012345";
+
+    mojibake::copyS(src.begin(), src.end(), mojibake::Utf32CallIterator(func));
+    EXPECT_EQ(U"abc\u040B\u1234\U00012345", r);
+}
