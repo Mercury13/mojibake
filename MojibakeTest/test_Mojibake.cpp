@@ -2617,7 +2617,7 @@ TEST(CountCps, Utf8Ascii)
 TEST(CountCps, Utf8Normal)
 {
     std::string_view s = "abc\u040B\u1234\U00012345"sv;
-    EXPECT_EQ(12, s.length());  // All 3 lengths here
+    EXPECT_EQ(12u, s.length());  // All 3 lengths here
     EXPECT_EQ(6u, mojibake::countCps(s.cbegin(), s.cend()));
     EXPECT_EQ(6u, mojibake::countCps(s));
 }
