@@ -2617,6 +2617,7 @@ TEST(CountCps, Utf8Ascii)
 TEST(CountCps, Utf8Normal)
 {
     std::u8string_view s = u8"abc\u040B\u1234\U00012345";
+    EXPECT_EQ(12, s.length());  // All 3 lengths here
     EXPECT_EQ(6u, mojibake::countCps(s.cbegin(), s.cend()));
     EXPECT_EQ(6u, mojibake::countCps(s));
 }
@@ -2642,6 +2643,32 @@ TEST(CountCps, Utf16Normal)
     std::u16string_view s = u"abc\u040B\u1234\U00012345";
     EXPECT_EQ(6u, mojibake::countCps(s.cbegin(), s.cend()));
     EXPECT_EQ(6u, mojibake::countCps(s));
+}
+
+
+///
+/// UTF-16, pair abruptly ends: prerequisite
+/// Also a simple check for pairs
+///
+TEST(CountCps, Utf16AbruptEndPrereq)
+{
+    std::u16string_view s = u"\U00012345\U000EEEEE";
+    EXPECT_EQ(4, s.length());
+    EXPECT_EQ(2u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(2u, mojibake::countCps(s));
+}
+
+
+///
+/// UTF-16, pair abruptly ends: should not read beyond end
+///
+TEST(CountCps, Utf16AbruptEnd)
+{
+    std::u16string_view s0 = u"\U00012345\U000EEEEE";
+    auto s = s0.substr(0, 3);
+    EXPECT_EQ(3, s.length());
+    EXPECT_EQ(1u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(1u, mojibake::countCps(s));
 }
 
 
