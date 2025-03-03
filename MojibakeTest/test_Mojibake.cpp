@@ -2651,7 +2651,7 @@ TEST(CountCps, Utf16Normal)
 /// UTF-16, zoo of misc. troubles
 /// Known troubles:
 /// • 1st surrogate w/o 2nd
-/// • 2nd surrogate w/o 1st
+/// • 2nd surrogate
 ///
 TEST(CountCps, Utf16Zoo)
 {
