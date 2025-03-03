@@ -2688,6 +2688,7 @@ TEST(CountCps, Utf32Normal)
 /// UTF-32, zoo of misc. troubles
 /// Known troubles:
 /// • Lone surrogate of either type
+/// • Too high CP
 ///
 TEST(CountCps, Utf32Zoo)
 {
