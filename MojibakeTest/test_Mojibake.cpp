@@ -2673,7 +2673,7 @@ TEST(CountCps, Utf16Zoo)
 TEST(CountCps, Utf16AbruptEndPrereq)
 {
     std::u16string_view s = u"\U00012345\U000EEEEE"sv;
-    EXPECT_EQ(4, s.length());
+    EXPECT_EQ(4u, s.length());
     EXPECT_EQ(2u, mojibake::countCps(s.cbegin(), s.cend()));
     EXPECT_EQ(2u, mojibake::countCps(s));
 }
@@ -2686,7 +2686,7 @@ TEST(CountCps, Utf16AbruptEnd)
 {
     std::u16string_view s0 = u"\U00012345\U000EEEEE";
     auto s = s0.substr(0, 3);
-    EXPECT_EQ(3, s.length());
+    EXPECT_EQ(3u, s.length());
     EXPECT_EQ(1u, mojibake::countCps(s.cbegin(), s.cend()));
     EXPECT_EQ(1u, mojibake::countCps(s));
 }
