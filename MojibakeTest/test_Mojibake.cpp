@@ -2594,3 +2594,83 @@ TEST (CallIterator, ToUtf32)
     mojibake::copyS(src.begin(), src.end(), mojibake::Utf32CallIterator(func));
     EXPECT_EQ(U"abc\u040B\u1234\U00012345", r);
 }
+
+
+///// countCps /////////////////////////////////////////////////////////////////
+
+
+///
+/// UTF-8, ASCII string
+///
+TEST(CountCps, Utf8Ascii)
+{
+    std::u8string_view s = u8"\u0001 alphabravo\u007F";
+    EXPECT_EQ(13u, s.length());
+    EXPECT_EQ(13u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(13u, mojibake::countCps(s));
+}
+
+
+///
+/// UTF-8, normal string
+///
+TEST(CountCps, Utf8Normal)
+{
+    std::u8string_view s = u8"abc\u040B\u1234\U00012345";
+    EXPECT_EQ(6u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(6u, mojibake::countCps(s));
+}
+
+
+///
+/// UTF-8, string from Base Plane
+///
+TEST(CountCps, Utf16Bmp)
+{
+    std::u16string_view s = u"\u0001 alphaЖႴꔀ\uD7FF\uE000bravo\uFFFF";
+    EXPECT_EQ(18u, s.length());
+    EXPECT_EQ(18u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(18u, mojibake::countCps(s));
+}
+
+
+///
+/// UTF-16, normal string
+///
+TEST(CountCps, Utf16Normal)
+{
+    std::u16string_view s = u"abc\u040B\u1234\U00012345";
+    EXPECT_EQ(6u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(6u, mojibake::countCps(s));
+}
+
+
+///
+/// UTF-32, normal string
+///
+TEST(CountCps, Utf32Normal)
+{
+    std::u32string_view s = U"abc\u040B\u1234\U00012345";
+    EXPECT_EQ(6u, s.length());
+    EXPECT_EQ(6u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(6u, mojibake::countCps(s));
+}
+
+
+///
+/// UTF-32, zoo of misc. troubles
+/// Known troubles:
+/// • Lone surrogate of either type
+///
+TEST(CountCps, Utf32Zoo)
+{
+    std::u32string s = U"abc";  // 3
+    s.push_back(0xDD00);    // Surrogate
+    s.push_back(0x040B);        // 4
+    s.push_back(0xD999);    // Surrogate
+    s.push_back(0x110000);  // Too high
+    s.push_back(0x1234);        // 5
+    s.push_back(0x12345);       // 6
+    EXPECT_EQ(6u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(6u, mojibake::countCps(s));
+}
