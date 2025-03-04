@@ -2679,8 +2679,11 @@ TEST(CountCps, Utf8Zoo)
     s.push_back(0xBF);
     s.push_back(0xBF);
     s.append("\uD7FF");     // 21
+    s.push_back(0xED);      // D800 encoded in UTF-8
+    s.push_back(0xA0);
+    s.push_back(0x80);
     s.append("\U00012345\uFFFF"sv); // 23
-    EXPECT_EQ(58u, s.length());
+    EXPECT_EQ(61u, s.length());
     EXPECT_EQ(23u, mojibake::countCps(s.cbegin(), s.cend()));
     EXPECT_EQ(23u, mojibake::countCps(s));
 }
