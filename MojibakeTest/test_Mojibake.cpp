@@ -2606,6 +2606,7 @@ TEST(CountCps, Utf8Ascii)
 {
     std::string_view s = "\u0000 alphabravo\u007F"sv;
     EXPECT_EQ(13u, s.length());
+    EXPECT_TRUE(mojibake::isValid(s));
     EXPECT_EQ(13u, mojibake::countCps(s.cbegin(), s.cend()));
     EXPECT_EQ(13u, mojibake::countCps(s));
 }
@@ -2618,8 +2619,70 @@ TEST(CountCps, Utf8Normal)
 {
     std::string_view s = "abc\u040B\u1234\U00012345"sv;
     EXPECT_EQ(12u, s.length());  // All 3 lengths here
+    EXPECT_TRUE(mojibake::isValid(s));
     EXPECT_EQ(6u, mojibake::countCps(s.cbegin(), s.cend()));
     EXPECT_EQ(6u, mojibake::countCps(s));
+}
+
+
+///
+/// UTF-16 isolated trouble: CP 7FF is encoded with too long sequence
+///
+TEST(CountCps, NkoTaman)
+{
+    std::string s;
+    s.push_back(0xE0);      // 7FF Nko taman written with too long seq
+    s.push_back(0x9F);
+    s.push_back(0xBF);
+    EXPECT_EQ(3u, s.length());
+    EXPECT_FALSE(mojibake::isValid(s));
+    EXPECT_EQ(0u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(0u, mojibake::countCps(s));
+}
+
+///
+/// UTF-16, zoo of misc. troubles
+/// Known troubles:
+/// • CP starts with continuation byte
+/// • CP starts with strange byte
+/// • Too few continuation bytes
+/// • CP is encoded with too long sequence
+/// • Encoded surrogate CP
+///
+TEST(CountCps, Utf8Zoo)
+{
+    std::string s { "\u0000 alphaЖ"sv };    // 8
+    s.push_back(0x81);      // Starts with continuation byte
+    s.push_back(0x82);
+    s.push_back(0x83);
+    s.append("Ⴔꔀ");         // 10
+    s.push_back(0xFE);      // Strange byte
+    s.append("\uD7FF");     // 11
+    s.push_back(0xD0);      // 2-byte, have just 1
+    s.append("\uE000");     // 12
+    s.push_back(0xE1);      // 3-byte, have just 2
+    s.push_back(0x9C);
+    s.append("bravo");      // 17
+    s.push_back(0xF0);      // 4-byte, have just 3
+    s.push_back(0x90);
+    s.push_back(0x92);
+    s.append("c");          // 18
+    s.push_back(0xC1);      // 7F written with too long sequence
+    s.push_back(0xBF);
+    s.append("d");          // 19
+    s.push_back(0xE0);      // 7FF Nko taman written with too long seq
+    s.push_back(0x9F);
+    s.push_back(0xBF);
+    s.append("e");          // 20
+    s.push_back(0xF0);      // FFFF written with too long sequence
+    s.push_back(0x8F);
+    s.push_back(0xBF);
+    s.push_back(0xBF);
+    s.append("\uD7FF");     // 21
+    s.append("\U00012345\uFFFF"sv); // 23
+    EXPECT_EQ(58u, s.length());
+    EXPECT_EQ(23u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(23u, mojibake::countCps(s));
 }
 
 
@@ -2673,6 +2736,7 @@ TEST(CountCps, Utf16Zoo)
 TEST(CountCps, Utf16AbruptEndPrereq)
 {
     std::u16string_view s = u"\U00012345\U000EEEEE"sv;
+    EXPECT_TRUE(mojibake::isValid(s));
     EXPECT_EQ(4u, s.length());
     EXPECT_EQ(2u, mojibake::countCps(s.cbegin(), s.cend()));
     EXPECT_EQ(2u, mojibake::countCps(s));
@@ -2686,6 +2750,7 @@ TEST(CountCps, Utf16AbruptEnd)
 {
     std::u16string_view s0 = u"\U00012345\U000EEEEE";
     auto s = s0.substr(0, 3);
+    EXPECT_FALSE(mojibake::isValid(s));
     EXPECT_EQ(3u, s.length());
     EXPECT_EQ(1u, mojibake::countCps(s.cbegin(), s.cend()));
     EXPECT_EQ(1u, mojibake::countCps(s));
@@ -2698,6 +2763,7 @@ TEST(CountCps, Utf16AbruptEnd)
 TEST(CountCps, Utf32Normal)
 {
     std::u32string_view s = U"abc\u040B\u1234\U00012345";
+    EXPECT_TRUE(mojibake::isValid(s));
     EXPECT_EQ(6u, s.length());
     EXPECT_EQ(6u, mojibake::countCps(s.cbegin(), s.cend()));
     EXPECT_EQ(6u, mojibake::countCps(s));
