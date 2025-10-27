@@ -1,19 +1,8 @@
 #pragma once
 
-#if __cplusplus >= 202002L
-    #define CPP20_LIKELY [[likely]]
-    #define CPP20_UNLIKELY [[unlikely]]
-#else
-    #define CPP20_LIKELY
-    #define CPP20_UNLIKELY
-#endif
-
 #include <iterator> // won’t be included actually
 #include <limits>   // won’t be included actually
-
-#if __cplusplus >= 202002L
-    #include <bit>
-#endif
+#include <bit>
 
 namespace mojibake::detail {
 
@@ -94,13 +83,11 @@ namespace mojibake::detail {
         using Enc = Utf8;
     };
 
-    #if __cplusplus >= 202002L
-        template<>
-        class UtfTraits<char8_t> {
-        public:
-            using Enc = Utf8;
-        };
-    #endif
+    template<>
+    class UtfTraits<char8_t> {
+    public:
+        using Enc = Utf8;
+    };
 
     template<>
     class UtfTraits<char16_t> {
@@ -278,9 +265,9 @@ namespace mojibake::detail {
     {
         for (; p != end; ++p) {
             char32_t c = *p;
-            if (mojibake::isValid(c)) CPP20_LIKELY {
+            if (mojibake::isValid(c)) [[likely]] {
                 MJ_PUT_BRK(c);
-            } else CPP20_UNLIKELY {
+            } else [[unlikely]] {
                 if (handleMojibake<Enc2>(p, Event::CODE, dest, onMojibake))
                     break;
             }
@@ -306,11 +293,11 @@ namespace mojibake::detail {
     bool ItEnc<It, Utf16>::put(It& it, char32_t cp)
             noexcept (noexcept(*it = static_cast<unsigned short>(cp)) && noexcept (++it))
     {
-        if (cp < U16_2WORD_MIN) CPP20_LIKELY {   // 1 word
+        if (cp < U16_2WORD_MIN) [[likely]] {   // 1 word
             MJ_CHECK_REM(1)
             *(it) = static_cast<wchar_t>(cp);
             ++it;
-        } else if (cp <= U16_2WORD_MAX) CPP20_UNLIKELY { // 2 words
+        } else if (cp <= U16_2WORD_MAX) [[unlikely]] { // 2 words
             MJ_CHECK_REM(2)
             cp -= U16_2WORD_MIN;
             const wchar_t lo10 = cp & 0x3FF;
@@ -329,22 +316,22 @@ namespace mojibake::detail {
         for (; p != end;) {
             auto cpStart = p++;
             char16_t word1 = *cpStart;
-            if (word1 < SURROGATE_HI_MIN) CPP20_LIKELY {
+            if (word1 < SURROGATE_HI_MIN) [[likely]] {
                 if (word1 < SURROGATE_MIN) { // Low BMP char => OK
                     MJ_PUT_BRK(word1);
                 } else {  // Leading surrogate
-                    if (p == end) CPP20_UNLIKELY {
+                    if (p == end) [[unlikely]] {
                         // Abrupt end — break always
                         handleMojibake<Enc2>(cpStart, Event::END, dest, onMojibake);
                         break;
                     } else {
                         char16_t word2 = *p;
                         if (word2 < SURROGATE_HI_MIN || word2 > SURROGATE_HI_MAX)
-                        CPP20_UNLIKELY {
+                        [[unlikely]] {
                             if (handleMojibake<Enc2>(p, Event::BYTE_NEXT, dest, onMojibake))
                                 break;
                             // DO NOT increment if BYTE_NEXT, the byte may come in handy
-                        } else CPP20_LIKELY {
+                        } else [[likely]] {
                             ++p;
                             char32_t cp = (((word1 & 0x3FF) << 10) | (word2 & 0x3FF)) + 0x10000;
                             MJ_PUT_BRK(cp);
@@ -352,7 +339,7 @@ namespace mojibake::detail {
                     }
                 }
             } else {
-                if (word1 <= SURROGATE_MAX) CPP20_UNLIKELY { // Trailing surrogate
+                if (word1 <= SURROGATE_MAX) [[unlikely]] { // Trailing surrogate
                     if (handleMojibake<Enc2>(cpStart, Event::BYTE_START, dest, onMojibake))
                         break;
                 } else { // High BMP char => OK
@@ -370,25 +357,25 @@ namespace mojibake::detail {
         for (; p != end;) {
             auto cpStart = p++;
             char16_t word1 = *cpStart;
-            if (word1 < SURROGATE_HI_MIN) CPP20_LIKELY {
+            if (word1 < SURROGATE_HI_MIN) [[likely]] {
                 if (word1 < SURROGATE_MIN) { // Low BMP char => OK
                     ++r;
                 } else {  // Leading surrogate
-                    if (p == end) CPP20_UNLIKELY {
+                    if (p == end) [[unlikely]] {
                         // do nothing, bad CP
                     } else {
                         char16_t word2 = *p;
                         if (word2 < SURROGATE_HI_MIN || word2 > SURROGATE_HI_MAX)
-                        CPP20_UNLIKELY {
+                        [[unlikely]] {
                             // do nothing, bad CP
-                        } else CPP20_LIKELY {
+                        } else [[likely]] {
                             ++p;
                             ++r;
                         }
                     }
                 }
             } else {
-                if (word1 <= SURROGATE_MAX) CPP20_UNLIKELY { // Trailing surrogate
+                if (word1 <= SURROGATE_MAX) [[unlikely]] { // Trailing surrogate
                     // do nothing, bad CP
                 } else { // High BMP char => OK
                     ++r;
@@ -404,24 +391,24 @@ namespace mojibake::detail {
         for (; p != end;) {
             auto cpStart = p++;
             char16_t word1 = *cpStart;
-            if (word1 < SURROGATE_HI_MIN) CPP20_LIKELY {
+            if (word1 < SURROGATE_HI_MIN) [[likely]] {
                 if (word1 < SURROGATE_MIN) { // Low BMP char => OK
                     // OK, do nothing
                 } else {  // Leading surrogate
-                    if (p == end) CPP20_UNLIKELY {
+                    if (p == end) [[unlikely]] {
                         return false;
                     } else {
                         char16_t word2 = *p;
                         if (word2 < SURROGATE_HI_MIN || word2 > SURROGATE_HI_MAX)
-                        CPP20_UNLIKELY {
+                        [[unlikely]] {
                             return false;
-                        } else CPP20_LIKELY {
+                        } else [[likely]] {
                             ++p;
                         }
                     }
                 }
             } else {
-                if (word1 <= SURROGATE_MAX) CPP20_UNLIKELY { // Trailing surrogate
+                if (word1 <= SURROGATE_MAX) [[unlikely]] { // Trailing surrogate
                     return false;
                 } else { // High BMP char => OK
                     // do nothing
@@ -449,7 +436,7 @@ namespace mojibake::detail {
     bool ItEnc<It, Utf8>::put(It& it, char32_t cp)
             noexcept (noexcept(*it = static_cast<unsigned char>(cp)) && noexcept (++it))
     {
-        if (cp <= U8_2BYTE_MAX) CPP20_LIKELY {  // 1 or 2 bytes, the most frequent case
+        if (cp <= U8_2BYTE_MAX) [[likely]] {  // 1 or 2 bytes, the most frequent case
             if (cp <= U8_1BYTE_MAX) {  // 1 byte
                 MJ_CHECK_REM(1)
                 *it = static_cast<unsigned char>(cp);  ++it;
@@ -475,39 +462,7 @@ namespace mojibake::detail {
         return true;
     }
 
-    constexpr int fallbackCount1(unsigned char x)
-    {
-        static_assert(std::numeric_limits<unsigned char>::max() == 255);
-#define ROW(x) x,x,x,x, x,x,x,x, x,x,x,x, x,x,x,x
-        constexpr char table[256] = {
-            ROW(0), ROW(0), ROW(0), ROW(0),
-            ROW(0), ROW(0), ROW(0), ROW(0),
-            ROW(1), ROW(1), ROW(1), ROW(1),
-            ROW(2), ROW(2), ROW(3),
-            4,4,4,4, 4,4,4,4, 5,5,5,5, 6,6,7,8
-        };
-#undef ROW
-        return table[x];
-    }
-
-#if __cplusplus >= 202002L
-    // C++20: use standard bit library
-    constexpr int count1(unsigned char x)
-        { return std::countl_one(x); }
-#elif defined(__GNUC__) || defined (__clang__)
-    // G++/clang: re-implement using __builtin_clz; exists long before C++17
-    constexpr int count1(unsigned char x)
-    {
-        constexpr auto ndInt  = std::numeric_limits<unsigned int> ::digits;
-        constexpr auto ndChar = std::numeric_limits<unsigned char>::digits;
-        constexpr auto diff = ndInt - ndChar;
-        return __builtin_clz(x ^ 0xFF) - diff;
-    }
-#else
-    // Fallback
-    constexpr int count1(unsigned char x)
-        { return fallbackCount1(x); }
-#endif
+    constexpr int count1(unsigned char x) { return std::countl_one(x); }
 
     /// @return [+] this byte means “continue UTF-8 codepoint”
     constexpr bool isU8ContinueByte(unsigned char b) { return (b & 0xC0) == 0x80; }
@@ -561,22 +516,22 @@ namespace mojibake::detail {
                     goto badCode;
                 MJ_PUT_GOTO(cp)
                 break;
-            default: CPP20_UNLIKELY {
+            default: [[unlikely]] {
                     if (handleMojibake<Enc2>(cpStart, Event::BYTE_START, dest, onMojibake))
                         goto brk;
                     // Skip all continuation bytes
                     while (p != end && isU8ContinueByte(*p))
                         ++p;
                 } break;
-            abruptEnd: CPP20_UNLIKELY {
+            abruptEnd: [[unlikely]] {
                     if (handleMojibake<Enc2>(cpStart, Event::END, dest, onMojibake))
                         goto brk;
                 } break;
-            badNext: CPP20_UNLIKELY {
+            badNext: [[unlikely]] {
                     if (handleMojibake<Enc2>(p, Event::BYTE_NEXT, dest, onMojibake))
                         goto brk;
                 } break;
-            badCode: CPP20_UNLIKELY {
+            badCode: [[unlikely]] {
                     if (handleMojibake<Enc2>(cpStart, Event::CODE, dest, onMojibake))
                         goto brk;
                 } break;

@@ -1532,11 +1532,35 @@ TEST (IsValidU8, Byte800_Good)
 
 
 ///
+/// …char8_t
+///
+TEST (IsValidU8, Byte800_GoodUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xE0, 0xA0, 0x80, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(5u, s.length());
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
 /// D7FF, the last before surrogate
 ///
 TEST (IsValidU8, ByteD7FF_Good)
 {
     std::string_view s = "ab" "\xED\x9F\xBF";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// …char8_t
+///
+TEST (IsValidU8, ByteD7FF_GoodUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xED, 0x9F, 0xBF, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(5u, s.length());
     EXPECT_TRUE(mojibake::isValid(s));
 }
 
@@ -1552,11 +1576,35 @@ TEST (IsValidU8, ByteD800_Bad)
 
 
 ///
+/// …char8_t
+///
+TEST (IsValidU8, ByteD800_BadUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xED, 0xA0, 0x80, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(5u, s.length());
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
 /// DFFF, the last surrogate
 ///
 TEST (IsValidU8, ByteDFFF_Bad)
 {
     std::string_view s = "ab" "\xED\xBF\xBF";
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// char8_t
+///
+TEST (IsValidU8, ByteDFFF_BadUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xED, 0xBF, 0xBF, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(5u, s.length());
     EXPECT_FALSE(mojibake::isValid(s));
 }
 
@@ -1572,11 +1620,35 @@ TEST (IsValidU8, ByteE000_Good)
 
 
 ///
+/// …char8_t
+///
+TEST (IsValidU8, ByteE000_GoodUu8)
+{
+    char8_t data[] { 'a', 'b', 0xEE, 0x80, 0x80, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(5u, s.length());
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
 /// FFFF, the last 3-byte, non-char but still good
 ///
 TEST (IsValidU8, ByteFFFF_Good)
 {
     std::string_view s = "ab" "\xEF\xBF\xBF";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// …char8_t
+///
+TEST (IsValidU8, ByteFFFF_GoodUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xEF, 0xBF, 0xBF, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(5u, s.length());
     EXPECT_TRUE(mojibake::isValid(s));
 }
 
@@ -1592,6 +1664,18 @@ TEST (IsValidU8, Byte10000_Good)
 
 
 ///
+/// …char8_t
+///
+TEST (IsValidU8, Byte10000_GoodUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xF0, 0x90, 0x80, 0x80, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(6u, s.length());
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
 /// FFFF encoded with 4 bytes — too long
 ///
 TEST (IsValidU8, ByteFFFF_Bad)
@@ -1602,11 +1686,35 @@ TEST (IsValidU8, ByteFFFF_Bad)
 
 
 ///
-/// 10FFFF, last in Unicode
+/// …char8_t
+///
+TEST (IsValidU8, ByteFFFF_BadUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xF0, 0x8F, 0xBF, 0xBF, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(6u, s.length());
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// 10FFFF, the last in Unicode
 ///
 TEST (IsValidU8, Byte10FFFF_Good)
 {
     std::string_view s = "ab" "\xF4\x8F\xBF\xBF";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// …char8_t
+///
+TEST (IsValidU8, Byte10FFFF_GoodUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xF4, 0x8F, 0xBF, 0xBF, 0 };
+    std::u8string_view s{data};
+    EXPECT_EQ(6u, s.length());
     EXPECT_TRUE(mojibake::isValid(s));
 }
 
@@ -1621,33 +1729,15 @@ TEST (IsValidU8, Byte110000_Bad)
 }
 
 
-/////
-/////  fallbackCount1 //////////////////////////////////////////////////////////
-/////
-/////
-
 ///
-/// As we use MinGW here, fallbackCount1 stays untested.
-/// Test it somehow
+/// …char8_t
 ///
-TEST (FallbackCount1, xxx)
+TEST (IsValidU8, Byte110000_BadUu8)
 {
-    EXPECT_EQ(0, mojibake::detail::fallbackCount1(0b0000'0000));
-    EXPECT_EQ(0, mojibake::detail::fallbackCount1(0b0111'1111));
-    EXPECT_EQ(1, mojibake::detail::fallbackCount1(0b1000'0000));
-    EXPECT_EQ(1, mojibake::detail::fallbackCount1(0b1011'1111));
-    EXPECT_EQ(2, mojibake::detail::fallbackCount1(0b1100'0000));
-    EXPECT_EQ(2, mojibake::detail::fallbackCount1(0b1101'1111));
-    EXPECT_EQ(3, mojibake::detail::fallbackCount1(0b1110'0000));
-    EXPECT_EQ(3, mojibake::detail::fallbackCount1(0b1110'1111));
-    EXPECT_EQ(4, mojibake::detail::fallbackCount1(0b1111'0000));
-    EXPECT_EQ(4, mojibake::detail::fallbackCount1(0b1111'0111));
-    EXPECT_EQ(5, mojibake::detail::fallbackCount1(0b1111'1000));
-    EXPECT_EQ(5, mojibake::detail::fallbackCount1(0b1111'1011));
-    EXPECT_EQ(6, mojibake::detail::fallbackCount1(0b1111'1100));
-    EXPECT_EQ(6, mojibake::detail::fallbackCount1(0b1111'1101));
-    EXPECT_EQ(7, mojibake::detail::fallbackCount1(0b1111'1110));
-    EXPECT_EQ(8, mojibake::detail::fallbackCount1(0b1111'1111));
+    static const char8_t data[] { 'a', 'b', 0xF4, 0x90, 0x80, 0x80, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(6u, s.length());
+    EXPECT_FALSE(mojibake::isValid(s));
 }
 
 
@@ -1684,6 +1774,7 @@ public:
 
 ///
 /// UTF-32: good string, testing mock object
+/// Let’s check only a good version for char8_t
 ///
 TEST (Error, U32Good)
 {
@@ -1692,6 +1783,22 @@ TEST (Error, U32Good)
     MyHandler h(s);
     auto r = mojibake::to<std::string>(s, h);
     EXPECT_EQ("abc" "\xF0\x9E\x84\xA3" "\xEA\xA6\xA3", r);
+    EXPECT_EQ(0, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(5u, h.pos());   // a,b,c,40B good
+}
+
+
+///
+/// …char8_t
+///
+TEST (Error, U32GoodUu8)
+{
+    std::u32string s = U"abc\U0001E123\uA9A3";
+
+    MyHandler h(s);
+    auto r = mojibake::to<std::u8string>(s, h);
+    EXPECT_EQ(u8"abc\U0001E123\uA9A3", r);
     EXPECT_EQ(0, h.nEvents);
     EXPECT_EQ(mojibake::Event::END, h.firstEvent);
     EXPECT_EQ(5u, h.pos());   // a,b,c,40B good
@@ -1745,6 +1852,7 @@ TEST (Error, U32Surrogate)
 ///
 /// UTF-16: abrupt end
 /// Bhv fixed, END at CP’s start
+/// We check for U16 reading here → may I skip creating u8string?
 ///
 TEST (Error, U16AbruptEnd)
 {
@@ -1831,12 +1939,42 @@ TEST (Error, Utf8AbruptEnd12)
 
 
 ///
+/// …char8_t
+///
+TEST (Error, Uu8AbruptEnd12)
+{
+    std::u8string s = u8"ab" "\xE1\x9D\x8C" "\xD7";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"ab" "\u174C\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // ab, 3×Buhid OK, and #5 (unfinished Hebrew) is bad
+}
+
+
+///
 /// UTF-8: unfinished 1/2
 /// Bhv fixed, BYTE_NEXT at bad byte
 ///
 TEST (Error, Utf8Unfinished12)
 {
     std::string s = "ab" "\xE1\x9D\x8C" "\xD7" "c";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"ab" "\u174C\u263A" "c", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
+    EXPECT_EQ(6u, h.pos()); // ab, 3×Buhid, unfinished Hebrew OK, c is bad
+}
+
+
+///
+/// …char8_t
+///
+TEST (Error, Uu8Unfinished12)
+{
+    std::u8string s = u8"ab" "\xE1\x9D\x8C" "\xD7" "c";
     MyHandler h(s);
     auto r = mojibake::to<std::u32string>(s, h);
     EXPECT_EQ(U"ab" "\u174C\u263A" "c", r);
@@ -1864,6 +2002,21 @@ TEST (Error, Utf8LongCode2)
 
 
 ///
+/// …char8_t
+///
+TEST (Error, Uu8LongCode2)
+{
+    std::u8string s = u8"ab" "\xD1\xA6" "\xC1\xBF";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"ab" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
+    EXPECT_EQ(4u, h.pos()); // ab, 2×Cyr OK, and #4 (7F in two bytes) is bad
+}
+
+
+///
 /// UTF-8: abrupt end 1/3
 /// Bhv fixed, END at start of CP
 ///
@@ -1880,12 +2033,42 @@ TEST (Error, Utf8AbruptEnd13)
 
 
 ///
+/// …char8_t
+///
+TEST (Error, Uu8AbruptEnd13)
+{
+    std::u8string s = u8"abcde" "\xE0\xAC\x8A" "\xE1";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"abcde" "\u0B0A\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(8u, h.pos()); // abcde, 3×Oriya OK, and #8 (unfinished Ethiopic) is bad
+}
+
+
+///
 /// UTF-8: abrupt end 2/3
 /// Bhv fixed, END at start of CP
 ///
 TEST (Error, Utf8AbruptEnd23)
 {
     std::string s = "abcde" "\xE0\xAC\x8A" "\xE1\x8A";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"abcde" "\u0B0A\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(8u, h.pos()); // abcde, 3×Oriya OK, and #8 (unfinished Ethiopic) is bad
+}
+
+
+///
+/// …char8_t
+///
+TEST (Error, Uu8AbruptEnd23)
+{
+    std::u8string s = u8"abcde" "\xE0\xAC\x8A" "\xE1\x8A";
     MyHandler h(s);
     auto r = mojibake::to<std::u32string>(s, h);
     EXPECT_EQ(U"abcde" "\u0B0A\u263A", r);
@@ -1915,6 +2098,21 @@ TEST (Error, Utf8LongCodeAbruptEnd2)
 
 
 ///
+/// …char8_t
+///
+TEST (Error, Uu8LongCodeAbruptEnd2)
+{
+    std::u8string s = u8"ab" "\xD1\xA6" "\xC1";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"ab" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(4u, h.pos()); // ab, 2×Cyr OK, and #4 is bad
+}
+
+
+///
 /// UTF-8: unfinished 1/3
 /// Bhv fixed, BYTE_NEXT at bad byte
 ///
@@ -1931,12 +2129,42 @@ TEST (Error, Utf8Unfinished13)
 
 
 ///
+/// …char8_t
+///
+TEST (Error, Uu8Unfinished13)
+{
+    std::u8string s = u8"abcde" "\xE0\xAC\x8A" "\xE1" "Q";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"abcde" "\u0B0A\u263A" "Q", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
+    EXPECT_EQ(9u, h.pos()); // abcde, 3×Oriya, unfinished Ethiopic OK, and #9 Q is bad
+}
+
+
+///
 /// UTF-8: abrupt end 2/3
 /// Bhv fixed, BYTE_NEXT at bad byte
 ///
 TEST (Error, Utf8Unfinished23)
 {
     std::string s = "abcde" "\xE0\xAC\x8A" "\xE1\x8A" "Q";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"abcde" "\u0B0A\u263A" "Q", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
+    EXPECT_EQ(10u, h.pos()); // abcde, 3×Oriya, 2×unfinished Ethiopic OK, and #10 Q is bad
+}
+
+
+///
+/// …char8_t
+///
+TEST (Error, Uu8Unfinished23)
+{
+    std::u8string s = u8"abcde" "\xE0\xAC\x8A" "\xE1\x8A" "Q";
     MyHandler h(s);
     auto r = mojibake::to<std::u32string>(s, h);
     EXPECT_EQ(U"abcde" "\u0B0A\u263A" "Q", r);
@@ -1964,6 +2192,21 @@ TEST (Error, Utf8LongCode3)
 
 
 ///
+/// …char8_t
+///
+TEST (Error, Uu8LongCode3)
+{
+    std::u8string s = u8"xyz" "\xD1\xA6" "\xE0\x9F\xBF";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr OK, and #4 (7F in two bytes) is bad
+}
+
+
+///
 /// UTF-8: surrogate code of length 3
 ///   (surrogate codes are OUTRIGHT BANNED in Unicode)
 ///   ED BB B0 = DEF0, high sur
@@ -1972,6 +2215,18 @@ TEST (Error, Utf8LongCode3)
 TEST (Error, Utf8Surrogate3)
 {
     std::string s = "u" "\xD1\xA6" "\xED\xBB\xB0";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"u" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::CODE, h.firstEvent);
+    EXPECT_EQ(3u, h.pos()); // u, 2×Cyr OK, and #3 (high-sur in UTF-8) is bad
+}
+
+
+TEST (Error, Uu8Surrogate3)
+{
+    std::u8string s = u8"u" "\xD1\xA6" "\xED\xBB\xB0";
     MyHandler h(s);
     auto r = mojibake::to<std::u32string>(s, h);
     EXPECT_EQ(U"u" "\u0466\u263A", r);
@@ -2001,6 +2256,21 @@ TEST (Error, Utf8LongCodeAbruptEnd3)
 
 
 ///
+/// …char8_t
+///
+TEST (Error, Uu8LongCodeAbruptEnd3)
+{
+    std::u8string s = u8"xyz" "\xD1\xA6" "\xE0\x9F";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::END, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr OK, and #4 (bad CP) is bad
+}
+
+
+///
 /// UTF-8: long code of length 3 + bad byte
 ///   E0 9F <= 7FF, need 2 bytes
 /// Bhv fixed: BYTE_NEXT at bad byte
@@ -2017,6 +2287,19 @@ TEST (Error, Utf8LongCodeBadByte3)
 }
 
 
+///
+/// …char8_t
+///
+TEST (Error, Uu8LongCodeBadByte3)
+{
+    std::u8string s = u8"xyz" "\xD1\xA6" "\xE0\x9F" "t";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A" "t", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_NEXT, h.firstEvent);
+    EXPECT_EQ(7u, h.pos()); // xyz, 2×Cyr, E0 9F OK, and #7 is bad byte
+}
 
 
 ///
@@ -2027,6 +2310,21 @@ TEST (Error, Utf8LongCodeBadByte3)
 TEST (Error, Utf8BannedByte1)
 {
     std::string s = "xyz" "\xD1\xA6" "\xFA\x80\x80\x80\x80\x80";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr, and #5 is bad byte
+}
+
+
+///
+/// …char8_t
+///
+TEST (Error, Uu8BannedByte1)
+{
+    std::u8string s = u8"xyz" "\xD1\xA6" "\xFA\x80\x80\x80\x80\x80";
     MyHandler h(s);
     auto r = mojibake::to<std::u32string>(s, h);
     EXPECT_EQ(U"xyz" "\u0466\u263A", r);
@@ -2054,6 +2352,21 @@ TEST (Error, Utf8BannedByte2)
 
 
 ///
+/// …char8_t
+///
+TEST (Error, Uu8BannedByte2)
+{
+    std::u8string s = u8"xyz" "\xD1\xA6" "\xFA\x81\x82\x93\x94\xA5\xB6" "u";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A" "u", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr, and #5 is bad byte
+}
+
+
+///
 /// UTF-8: continuation byte
 /// Bhv varies: first BYTE_START on 80 then what????
 ///   (we trigger exactly one alarm)
@@ -2071,6 +2384,21 @@ TEST (Error, Utf8EightyByte1)
 
 
 ///
+/// …char8_t
+///
+TEST (Error, Uu8EightyByte1)
+{
+    std::u8string s = u8"xyz" "\xD1\xA6" "\x80\x80\x80\x80\x80";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr, and #5 is bad byte
+}
+
+
+///
 /// UTF-8: continuation byte
 /// Bhv varies: first BYTE_START on 80 then what????
 ///   (we trigger exactly one alarm)
@@ -2078,6 +2406,21 @@ TEST (Error, Utf8EightyByte1)
 TEST (Error, Utf8EightyByte2)
 {
     std::string s = "xyz" "\xD1\xA6" "\x81\x82\x93\x94\xA5\xB6" "u";
+    MyHandler h(s);
+    auto r = mojibake::to<std::u32string>(s, h);
+    EXPECT_EQ(U"xyz" "\u0466\u263A" "u", r);
+    EXPECT_EQ(1, h.nEvents);
+    EXPECT_EQ(mojibake::Event::BYTE_START, h.firstEvent);
+    EXPECT_EQ(5u, h.pos()); // xyz, 2×Cyr, and #5 is bad byte
+}
+
+
+///
+/// …char8_t
+///
+TEST (Error, Uu8EightyByte2)
+{
+    std::u8string s = u8"xyz" "\xD1\xA6" "\x81\x82\x93\x94\xA5\xB6" "u";
     MyHandler h(s);
     auto r = mojibake::to<std::u32string>(s, h);
     EXPECT_EQ(U"xyz" "\u0466\u263A" "u", r);
@@ -2121,9 +2464,26 @@ TEST (SimpleCaseFold, Container)
 }
 
 
+TEST (SimpleCaseFold, ContainerUu8)
+{
+    std::u8string_view input = u8"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
+    auto r = mojibake::simpleCaseFold<std::u16string>(input);
+    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+}
+
+
 TEST (SimpleCaseFold, Container2)
 {
     std::string_view input = "\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
+    std::u16string r;
+    mojibake::simpleCaseFold<std::u16string>(input, r);
+    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+}
+
+
+TEST (SimpleCaseFold, Container2Uu8)
+{
+    std::u8string_view input = u8"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
     std::u16string r;
     mojibake::simpleCaseFold<std::u16string>(input, r);
     EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
@@ -2138,9 +2498,20 @@ TEST (SimpleCaseFold, ConstChar)
 }
 
 
+TEST (SimpleCaseFold, ConstCharUu8)
+{
+    const char8_t* input = u8"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
+    auto r = mojibake::simpleCaseFold<std::u16string>(input);
+    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+}
+
+
 ///// mojibake::copyLim ////////////////////////////////////////////////////////
 
 
+///
+/// The simplest work: begin-end
+///
 TEST (CopyLim, SimpleBegEnd)
 {
     std::u32string_view src = U"abc" "\u1234" "\U00012345" "def";
@@ -2154,6 +2525,25 @@ TEST (CopyLim, SimpleBegEnd)
 }
 
 
+///
+/// …char8_t
+///
+TEST (CopyLim, SimpleBegEndUu8)
+{
+    std::u32string_view src = U"abc" "\u1234" "\U00012345" "def";
+    char8_t dest[30];
+    std::fill(std::begin(dest), std::end(dest), 'Q');
+    auto r = mojibake::copyLimM(src, std::begin(dest), std::end(dest));
+    EXPECT_EQ('Q', *r);
+
+    *r = '\0';
+    EXPECT_EQ(u8"abc" "\u1234" "\U00012345" "def"sv, dest);
+}
+
+
+///
+/// The simplest-work: begin-length
+///
 TEST (CopyLim, SimpleBegLen)
 {
     std::u32string_view src = U"abc" "\u1234" "\U00012345" "def";
@@ -2164,6 +2554,22 @@ TEST (CopyLim, SimpleBegLen)
 
     *r = '\0';
     EXPECT_STREQ("abc" "\u1234" "\U00012345" "def", dest);
+}
+
+
+///
+/// …char8_t
+///
+TEST (CopyLim, SimpleBegLenUu8)
+{
+    std::u32string_view src = U"abc" "\u1234" "\U00012345" "def";
+    char8_t dest[30];
+    std::fill(std::begin(dest), std::end(dest), 'Q');
+    auto r = mojibake::copyLimM(src, std::begin(dest), std::size(dest));
+    EXPECT_EQ('Q', *r);
+
+    *r = '\0';
+    EXPECT_EQ(u8"abc" "\u1234" "\U00012345" "def"sv, dest);
 }
 
 
@@ -2294,6 +2700,24 @@ TEST (CopyLim, U8Bad1)
 
 
 ///
+/// …char8_t
+///
+TEST (CopyLim, Uu8Bad1)
+{
+    std::u32string_view src = U"abcdefgh";
+    char8_t dest[8];
+    std::fill(std::begin(dest), std::end(dest), 'E');
+    auto r = mojibake::copyLimM(src, dest, dest + 4);
+    EXPECT_EQ(dest + 4, r);
+    EXPECT_EQ('E', *r);
+
+    *r = '\0';
+    std::u8string_view expected = u8"abcd";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
 /// UTF-8: stop at 2-byte CPs: 1 byte left
 ///
 TEST (CopyLim, U8Bad2)
@@ -2307,6 +2731,24 @@ TEST (CopyLim, U8Bad2)
 
     *r = '\0';
     std::string_view expected = "АБВ";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// …char8_t
+///
+TEST (CopyLim, Uu8Bad2)
+{
+    std::u32string_view src = U"АБВГДЕЁЖ";  // Cyrillic here
+    char8_t dest[8];
+    std::fill(std::begin(dest), std::end(dest), 'Y');
+    auto r = mojibake::copyLimM(src, dest, dest + 7);
+    EXPECT_EQ(dest + 6, r);
+    EXPECT_EQ('Y', *r);
+
+    *r = '\0';
+    std::u8string_view expected = u8"АБВ";
     EXPECT_EQ(expected, dest);
 }
 
@@ -2330,6 +2772,24 @@ TEST (CopyLim, U8Ok2)
 
 
 ///
+/// …char8_t
+///
+TEST (CopyLim, Uu8Ok2)
+{
+    std::u32string_view src = U"АБВГДЕЁЖ";  // Cyrillic here
+    char8_t dest[10];
+    std::fill(std::begin(dest), std::end(dest), 'U');
+    auto r = mojibake::copyLimM(src, dest, dest + 8);
+    EXPECT_EQ(dest + 8, r);
+    EXPECT_EQ('U', *r);
+
+    *r = '\0';
+    std::u8string_view expected = u8"АБВГ";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
 /// UTF-8: stop at 3-byte CPs: 2 bytes left
 ///
 TEST (CopyLim, U8Bad3)
@@ -2343,6 +2803,24 @@ TEST (CopyLim, U8Bad3)
 
     *r = '\0';
     std::string_view expected = "აბგ";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// …char8_t
+///
+TEST (CopyLim, Uu8Bad3)
+{
+    std::u32string_view src = U"აბგდევზ";   // Georgian here
+    char8_t dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'P');
+    auto r = mojibake::copyLimM(src, dest, dest + 11);
+    EXPECT_EQ(dest + 9, r);
+    EXPECT_EQ('P', *r);
+
+    *r = '\0';
+    std::u8string_view expected = u8"აბგ";
     EXPECT_EQ(expected, dest);
 }
 
@@ -2366,6 +2844,24 @@ TEST (CopyLim, U8Ok3)
 
 
 ///
+/// …char8_t
+///
+TEST (CopyLim, Uu8Ok3)
+{
+    std::u32string_view src = U"აბგდევზ";   // Georgian here
+    char8_t dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'L');
+    auto r = mojibake::copyLimM(src, dest, dest + 12);
+    EXPECT_EQ(dest + 12, r);
+    EXPECT_EQ('L', *r);
+
+    *r = '\0';
+    std::u8string_view expected = u8"აბგდ";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
 /// UTF-8: stop at 4-byte CPs: 3 bytes left
 ///
 TEST (CopyLim, U8Bad4)
@@ -2384,6 +2880,24 @@ TEST (CopyLim, U8Bad4)
 
 
 ///
+/// …char8_t
+///
+TEST (CopyLim, Uu8Bad4)
+{
+    std::u32string_view src = U"😀😁😂😃😄😅";   // Smilies here
+    char8_t dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'B');
+    auto r = mojibake::copyLimM(src, dest, dest + 11);
+    EXPECT_EQ(dest + 8, r);
+    EXPECT_EQ('B', *r);
+
+    *r = '\0';
+    std::u8string_view expected = u8"😀😁";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
 /// UTF-8: stop at 4-byte CPs: just OK
 ///
 TEST (CopyLim, U8Ok4)
@@ -2397,6 +2911,24 @@ TEST (CopyLim, U8Ok4)
 
     *r = '\0';
     std::string_view expected = "😀😁😂";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// …char8_t
+///
+TEST (CopyLim, Uu8Ok4)
+{
+    std::u32string_view src = U"😀😁😂😃😄😅";   // Smilies here
+    char8_t dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'J');
+    auto r = mojibake::copyLimM(src, dest, dest + 12);
+    EXPECT_EQ(dest + 12, r);
+    EXPECT_EQ('J', *r);
+
+    *r = '\0';
+    std::u8string_view expected = u8"😀😁😂";
     EXPECT_EQ(expected, dest);
 }
 
@@ -2423,6 +2955,26 @@ TEST (CopyLim, SkipMojibakeBadCharacterFits)
 
 ///
 /// Test this bhv of Skip:
+/// 3-byte mojibake EF BF BD does not fit, but the next char fits
+///
+TEST (CopyLim, SkipMojibakeBadCharacterFitsUu8)
+{
+    char32_t src1[] { 'a', 'b', 'c', 0x12345678, 'd', 'e', 'f' };
+    std::u32string_view src{ src1, std::size(src1) };
+    char8_t dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'K');
+    auto r = mojibake::copyLimS(src, dest, 4);
+    EXPECT_EQ(dest + 4, r);
+    EXPECT_EQ('K', *r);\
+
+    *r = '\0';
+    std::u8string_view expected = u8"abcd";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// Test this bhv of Skip:
 /// Same but we write mojibake
 ///
 TEST (CopyLim, U8MojibakeDoesNotFit)
@@ -2439,6 +2991,26 @@ TEST (CopyLim, U8MojibakeDoesNotFit)
     std::string_view expected = "abc";
     EXPECT_EQ(expected, dest);
 }
+
+
+///
+/// …char8_t
+///
+TEST (CopyLim, Uu8MojibakeDoesNotFit)
+{
+    char32_t src1[] { 'a', 'b', 'c', 0x12345678, 'd', 'e', 'f' };
+    std::u32string_view src{ src1, std::size(src1) };
+    char8_t dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'N');
+    auto r = mojibake::copyLimM(src, dest, 4);
+    EXPECT_EQ(dest + 3, r);
+    EXPECT_EQ('N', *r);\
+
+    *r = '\0';
+    std::u8string_view expected = u8"abc";
+    EXPECT_EQ(expected, dest);
+}
+
 
 ///
 /// Same but mojibake just fits
@@ -2460,6 +3032,25 @@ TEST (CopyLim, U8MojibakeJustFits)
 
 
 ///
+/// …char8_t
+///
+TEST (CopyLim, Uu8MojibakeJustFits)
+{
+    char32_t src1[] { 'a', 'b', 'c', 0x12345678, 'd', 'e', 'f' };
+    std::u32string_view src{ src1, std::size(src1) };
+    char8_t dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'N');
+    auto r = mojibake::copyLimM(src, dest, 6);
+    EXPECT_EQ(dest + 6, r);
+    EXPECT_EQ('N', *r);\
+
+    *r = '\0';
+    std::u8string_view expected = u8"abc\uFFFD";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
 /// Same but have 1 character left
 ///
 TEST (CopyLim, U8MojibakeGoOn)
@@ -2474,6 +3065,25 @@ TEST (CopyLim, U8MojibakeGoOn)
 
     *r = '\0';
     std::string_view expected = "abc\uFFFD" "d";
+    EXPECT_EQ(expected, dest);
+}
+
+
+///
+/// …char8_t
+///
+TEST (CopyLim, Uu8MojibakeGoOn)
+{
+    char32_t src1[] { 'a', 'b', 'c', 0x12345678, 'd', 'e', 'f' };
+    std::u32string_view src{ src1, std::size(src1) };
+    char8_t dest[15];
+    std::fill(std::begin(dest), std::end(dest), 'N');
+    auto r = mojibake::copyLimM(src, dest, 7);
+    EXPECT_EQ(dest + 7, r);
+    EXPECT_EQ('N', *r);\
+
+    *r = '\0';
+    std::u8string_view expected = u8"abc\uFFFD" "d";
     EXPECT_EQ(expected, dest);
 }
 
