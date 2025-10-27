@@ -1542,7 +1542,7 @@ TEST (IsValidU8, Byte7FF_GoodUu8)
 {
     static const char8_t data[] { 'a', 'b', 0xDF, 0xBF, 0 };
     std::u8string_view s { data };
-    EXPECT_EQ(4, s.length());
+    EXPECT_EQ(4u, s.length());
     EXPECT_TRUE(mojibake::isValid(s));
 }
 
