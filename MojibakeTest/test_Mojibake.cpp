@@ -1492,11 +1492,35 @@ TEST (IsValidU8, Byte7F_Bad)
 
 
 ///
+/// …char8_t
+///
+TEST (IsValidU8, Byte7F_BadUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xC1, 0xBF, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(4u, s.length());
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
 /// Byte 80 is good
 ///
 TEST (IsValidU8, Byte80_Good)
 {
     std::string_view s = "ab" "\xC2\x80";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// …char8_t
+///
+TEST (IsValidU8, Byte80_GoodUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xC2, 0x80, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(4u, s.length());
     EXPECT_TRUE(mojibake::isValid(s));
 }
 
@@ -1512,11 +1536,35 @@ TEST (IsValidU8, Byte7FF_Good)
 
 
 ///
+/// …char8_t
+///
+TEST (IsValidU8, Byte7FF_GoodUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xDF, 0xBF, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(4, s.length());
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
 /// Byte 7FF erroneously encoded in three bytes
 ///
 TEST (IsValidU8, Byte7FF_Bad)
 {
     std::string_view s = "ab" "\xE0\x9F\xBF";
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// …char8_t
+///
+TEST (IsValidU8, Byte7FF_BadUu8)
+{
+    static const char8_t data[] { 'a', 'b', 0xE0, 0x9F, 0xBF, 0 };
+    std::u8string_view s { data };
+    EXPECT_EQ(5u, s.length());
     EXPECT_FALSE(mojibake::isValid(s));
 }
 
