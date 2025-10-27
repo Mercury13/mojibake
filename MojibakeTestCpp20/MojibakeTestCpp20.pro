@@ -7,6 +7,9 @@ win32-g++ {
     QMAKE_CXXFLAGS += -static-libgcc -static-libstdc++
     LIBS += -static -lpthread
 }
+win32-clang-g++ {
+    LIBS += -static -lpthread
+}
 
 SOURCES += \
     ../GoogleTest/src/gtest-all.cc \
