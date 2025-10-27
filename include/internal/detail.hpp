@@ -193,10 +193,10 @@ namespace mojibake::detail {
     {
     public:
         static inline bool put(It& it, char32_t cp)
-            noexcept (noexcept(*it = cp) && noexcept (++it))
+            noexcept (noexcept(*it = static_cast<unsigned>(cp)) && noexcept (++it))
         {
             MJ_CHECK_REM(1)
-            *it = cp;
+            *it = static_cast<unsigned>(cp);
             ++it;
             return true;
         }
@@ -265,10 +265,10 @@ namespace mojibake::detail {
 
 #define MJ_PUT_HALTSTMT(what, Haltstmt) \
             if constexpr (IteratorLimit<It2>::isLimited) {  \
-                if (!ItEnc<It2, Enc2>::put(dest, what))  \
+                if (!ItEnc<It2, Enc2>::put(dest, static_cast<char32_t>(what)))  \
                     Haltstmt;                            \
             } else {                                     \
-                ItEnc<It2, Enc2>::put(dest, what);       \
+                ItEnc<It2, Enc2>::put(dest, static_cast<char32_t>(what));       \
             }
 #define  MJ_PUT_BRK(what)  MJ_PUT_HALTSTMT(what, break)
 #define MJ_PUT_GOTO(what)  MJ_PUT_HALTSTMT(what, goto brk)
@@ -293,7 +293,7 @@ namespace mojibake::detail {
     {
     public:
         static bool put(It& it, char32_t cp)
-                noexcept (noexcept(*it = cp) && noexcept (++it));
+                noexcept (noexcept(*it = static_cast<unsigned short>(cp)) && noexcept (++it));
 
         template <class It2, class Enc2, class Mjh>
         static It2 copy(It p, It end, It2 dest, const Mjh& onMojibake);
@@ -304,7 +304,7 @@ namespace mojibake::detail {
 
     template <class It>
     bool ItEnc<It, Utf16>::put(It& it, char32_t cp)
-            noexcept (noexcept(*it = cp) && noexcept (++it))
+            noexcept (noexcept(*it = static_cast<unsigned short>(cp)) && noexcept (++it))
     {
         if (cp < U16_2WORD_MIN) CPP20_LIKELY {   // 1 word
             MJ_CHECK_REM(1)
@@ -436,7 +436,7 @@ namespace mojibake::detail {
     {
     public:
         static bool put(It& it, char32_t cp)
-                noexcept (noexcept(*it = cp) && noexcept (++it));
+                noexcept (noexcept(*it = static_cast<unsigned char>(cp)) && noexcept (++it));
 
         template <class It2, class Enc2, class Mjh>
         static inline It2 copy(It p, It end, It2 dest, const Mjh& onMojibake);
@@ -447,12 +447,12 @@ namespace mojibake::detail {
 
     template <class It>
     bool ItEnc<It, Utf8>::put(It& it, char32_t cp)
-            noexcept (noexcept(*it = cp) && noexcept (++it))
+            noexcept (noexcept(*it = static_cast<unsigned char>(cp)) && noexcept (++it))
     {
         if (cp <= U8_2BYTE_MAX) CPP20_LIKELY {  // 1 or 2 bytes, the most frequent case
             if (cp <= U8_1BYTE_MAX) {  // 1 byte
                 MJ_CHECK_REM(1)
-                *it = cp;  ++it;
+                *it = static_cast<unsigned char>(cp);  ++it;
             } else { // 2 bytes
                 MJ_CHECK_REM(2)
                 *it     = (cp >> 6)   | 0xC0;

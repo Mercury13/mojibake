@@ -15,24 +15,24 @@
 
 namespace mojibake {
 
-    constexpr char32_t SURROGATE_MIN = 0xD800;
-    constexpr char32_t SURROGATE_MAX = 0xDFFF;
-    constexpr char32_t SURROGATE_LO_MIN = SURROGATE_MIN;
-    constexpr char32_t SURROGATE_HI_MIN = 0xDC00;
-    constexpr char32_t SURROGATE_LO_MAX = SURROGATE_HI_MIN - 1;
-    constexpr char32_t SURROGATE_HI_MAX = SURROGATE_MAX;
-    constexpr char32_t MOJIBAKE = 0xFFFD;
-    constexpr char32_t UNICODE_MAX = 0x10FFFF;
-    constexpr char32_t U8_1BYTE_MAX = 0x7F;
-    constexpr char32_t U8_2BYTE_MIN = 0x80;
-    constexpr char32_t U8_2BYTE_MAX = 0x7FF;
-    constexpr char32_t U8_3BYTE_MIN = 0x800;
-    constexpr char32_t U8_3BYTE_MAX = 0xFFFF;
-    constexpr char32_t U8_4BYTE_MIN = 0x10000;
-    constexpr char32_t U8_4BYTE_MAX = UNICODE_MAX;
-    constexpr char32_t U16_1WORD_MAX = 0xFFFF;
-    constexpr char32_t U16_2WORD_MIN = 0x10000;
-    constexpr char32_t U16_2WORD_MAX = UNICODE_MAX;
+    constexpr unsigned SURROGATE_MIN = 0xD800;
+    constexpr unsigned SURROGATE_MAX = 0xDFFF;
+    constexpr unsigned SURROGATE_LO_MIN = SURROGATE_MIN;
+    constexpr unsigned SURROGATE_HI_MIN = 0xDC00;
+    constexpr unsigned SURROGATE_LO_MAX = SURROGATE_HI_MIN - 1;
+    constexpr unsigned SURROGATE_HI_MAX = SURROGATE_MAX;
+    constexpr unsigned MOJIBAKE = 0xFFFD;
+    constexpr unsigned UNICODE_MAX = 0x10FFFF;
+    constexpr unsigned U8_1BYTE_MAX = 0x7F;
+    constexpr unsigned U8_2BYTE_MIN = 0x80;
+    constexpr unsigned U8_2BYTE_MAX = 0x7FF;
+    constexpr unsigned U8_3BYTE_MIN = 0x800;
+    constexpr unsigned U8_3BYTE_MAX = 0xFFFF;
+    constexpr unsigned U8_4BYTE_MIN = 0x10000;
+    constexpr unsigned U8_4BYTE_MAX = UNICODE_MAX;
+    constexpr unsigned U16_1WORD_MAX = 0xFFFF;
+    constexpr unsigned U16_2WORD_MIN = 0x10000;
+    constexpr unsigned U16_2WORD_MAX = UNICODE_MAX;
 
     struct Utf8  { using Ch = char; };
     struct Utf16 { using Ch = char16_t; };
