@@ -58,10 +58,12 @@ namespace mojibake {
     }
 
     enum class Event {
-        CODE,       // UTF-8/32, bad character code, or too long sequence. Place = sequence start
-        BYTE_START, // UTF-8/16, bad starting byte/word. Place obvious
-        BYTE_NEXT,  // UTF-8/16, bad any byte/word except start. Place = bad unit
-        END,        // UTF-8/16, code sequence abruptly ended. Place = sequence start
+        CODE,       ///< UTF-8/32, bad character code, or too long sequence. Place = sequence start
+                    ///< As UTF-16 limits code space, DOES NOT happen on UTF-16
+        BYTE_START, ///< UTF-8/16, bad starting byte/word. Place obvious
+                    ///< As UTF-32 does not have multi-byte sequences, this and the rest don’t happen
+        BYTE_NEXT,  ///< UTF-8/16, bad any byte/word except start. Place = bad unit
+        END,        ///< UTF-8/16, code sequence abruptly ended. Place = sequence start
     };
 
     namespace handler {
