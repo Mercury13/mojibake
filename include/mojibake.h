@@ -76,16 +76,16 @@ namespace mojibake {
         /// • accept two params: place and event
         /// • return code point or RET_SKIP, maybe with FG_HALT.
         ///
-        /// Place argument varies between serialization types, and…
-        /// • [U32] every bad codepoint → BAD_CODE
+        /// Place/event arhuments vary between serialization types, and…
+        /// • [U32] every bad codepoint → CODE
         /// • [U8/16] implementation-dependent, but…
-        ///   • [U8] surrogate/high but well-serialized → BAD_CODE
-        ///   • [U8] too long code sequence → BAD_CODE
+        ///   • [U8] surrogate/high but well-serialized → CODE
+        ///   • [U8] too long code sequence → CODE
         ///   • incomplete then good → BYTE_NEXT + normal recovery
         ///       e.g. losur + losur + hisur = mojibake(BYTE_NEXT) + surrogate
         ///   • [U8] if several of abrupt end, bad byte and low/high CP happen,
         ///       decoder reports JUST ONE problem.
-        ///         BYTE_NEXT > END, BAD_CODE!!!
+        ///         BYTE_NEXT > END, CODE!!!
         ///       Example: F0 8F 30 = …
         ///        • abrupt end (F0 → 4-byte code sequence)
         ///        • too low code (F0 8F → code < 10000, need 3 bytes)
@@ -96,6 +96,7 @@ namespace mojibake {
         class Skip final {
         public:
             inline char32_t operator () (
+
                     [[maybe_unused]] It place,
                     [[maybe_unused]] Event event) const noexcept { return RET_SKIP; }
         };  // class Skip
