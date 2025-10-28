@@ -3271,6 +3271,43 @@ TEST(CountCps, Utf8Ascii)
 
 
 ///
+/// Same, PChar
+///
+TEST(CountCps, Utf8Pchar)
+{
+    const char* s = "alphabravo\u007F";
+    EXPECT_EQ(11u, strlen(s));
+    EXPECT_TRUE(mojibake::isValid(s));
+    EXPECT_EQ(11u, mojibake::countCps(s));
+}
+
+
+///
+/// Same, char8_t
+///
+TEST(CountCps, Uu8Ascii)
+{
+    std::u8string_view s = u8"\u0000 alphabravo\u007F"sv;
+    EXPECT_EQ(13u, s.length());
+    EXPECT_TRUE(mojibake::isValid(s));
+    EXPECT_EQ(13u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(13u, mojibake::countCps(s));
+}
+
+
+///
+/// Same, char8_t + PChar
+///
+TEST(CountCps, Uu8Pchar)
+{
+    const char8_t* s = u8"alphabravo\u007F";
+    EXPECT_EQ(11u, strlen(reinterpret_cast<const char*>(s)));
+    EXPECT_TRUE(mojibake::isValid(s));
+    EXPECT_EQ(11u, mojibake::countCps(s));
+}
+
+
+///
 /// UTF-8, normal string
 ///
 TEST(CountCps, Utf8Normal)
@@ -3349,16 +3386,28 @@ TEST(CountCps, Utf8Zoo)
 
 
 ///
-/// UTF-8, string from Base Plane
+/// UTF-16, string from Base Plane
 ///
 TEST(CountCps, Utf16Bmp)
 {
     std::u16string_view s = u"\u0000 alphaЖႴꔀ\uD7FF\uE000bravo\uFFFF"sv;
     EXPECT_EQ(18u, s.length());
     EXPECT_EQ(18u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_TRUE(mojibake::isValid(s));
     EXPECT_EQ(18u, mojibake::countCps(s));
 }
 
+
+///
+/// Same, PChar
+///
+TEST(CountCps, Utf16PChar)
+{
+    const char16_t* s = u"alphaЖႴꔀ\uD7FF\uE000bravo\uFFFF";
+    EXPECT_EQ(16u, std::basic_string_view(s).length());
+    EXPECT_TRUE(mojibake::isValid(s));
+    EXPECT_EQ(16u, mojibake::countCps(s));
+}
 
 ///
 /// UTF-16, normal string
@@ -3433,6 +3482,18 @@ TEST(CountCps, Utf32Normal)
 
 
 ///
+/// Same, PChar
+///
+TEST(CountCps, Utf32PChar)
+{
+    const char32_t* s = U"abc\u040B\u1234\U00012345";
+    EXPECT_TRUE(mojibake::isValid(s));
+    EXPECT_EQ(6u, std::basic_string_view(s).length());
+    EXPECT_EQ(6u, mojibake::countCps(s));
+}
+
+
+///
 /// UTF-32, zoo of misc. troubles
 /// Known troubles:
 /// • Lone surrogate of either type
@@ -3448,5 +3509,33 @@ TEST(CountCps, Utf32Zoo)
     s.push_back(0x1234);        // 5
     s.push_back(0x12345);       // 6
     EXPECT_EQ(6u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(6u, mojibake::countCps(s));
+}
+
+
+///
+/// As Wstring uses UTF-16 or 32, just test basic runnability
+///
+TEST(CountCps, WstringNormal)
+{
+    std::wstring_view s = L"abc\u040B\u1234\U00012345";
+    EXPECT_TRUE(mojibake::isValid(s));
+    // 6 = UTF-32, 7 = UTF-16
+    EXPECT_TRUE(s.length() == 6 || s.length() == 7);
+    EXPECT_EQ(6u, mojibake::countCps(s.cbegin(), s.cend()));
+    EXPECT_EQ(6u, mojibake::countCps(s));
+}
+
+
+///
+/// Same, PChar
+///
+TEST(CountCps, WstringPChar)
+{
+    const wchar_t* s = L"abc\u040B\u1234\U00012345";
+    EXPECT_TRUE(mojibake::isValid(s));
+    auto len = wcslen(s);
+    // 6 = UTF-32, 7 = UTF-16
+    EXPECT_TRUE(len == 6 || len == 7);
     EXPECT_EQ(6u, mojibake::countCps(s));
 }

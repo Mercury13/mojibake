@@ -143,20 +143,57 @@ namespace mojibake {
     inline bool put(It& it, char32_t cp)
         { return detail::ItEnc<It, Enc>::put(it, cp); }
 
-    /// Counts # of valid codepoints in [beg, end)
+    /// Counts # of VALID codepoints in [beg, end)
+    /// All invalid codepoints are skipped as in toS functions
     template <class It,
               class Enc = typename detail::ItUtfTraits<It>::Enc,
               class = std::void_t<typename std::iterator_traits<It>::value_type>>
     inline size_t countCps(It beg, It end)
         { return detail::ItEnc<It, Enc>::countCps(beg, end); }
 
-    /// Counts # of valid codepoints in x
+    /// Counts # of VALID codepoints in x
+    /// All invalid codepoints are skipped as in toS functions
     template <class From,
               class Enc = typename detail::ContUtfTraits<From>::Enc>
     inline size_t countCps(const From& x)
     {
         using It = decltype(std::begin(x));
         return detail::ItEnc<It, Enc>::countCps(std::begin(x), std::end(x));
+    }
+
+    template <class Enc = Utf32>
+    inline size_t countCps(const char32_t* x)
+    {
+        std::basic_string_view sv(x);
+        return countCps<decltype(sv), Enc>(sv);
+    }
+
+    template <class Enc = Utf16>
+    inline size_t countCps(const char16_t* x)
+    {
+        std::basic_string_view sv(x);
+        return countCps<decltype(sv), Enc>(sv);
+    }
+
+    template <class Enc = typename detail::LenTraits<sizeof(wchar_t)>::Enc>
+    inline size_t countCps(const wchar_t* x)
+    {
+        std::basic_string_view sv(x);
+        return countCps<decltype(sv), Enc>(sv);
+    }
+
+    template <class Enc = Utf8>
+    inline size_t countCps(const char* x)
+    {
+        std::basic_string_view sv(x);
+        return countCps<decltype(sv), Enc>(sv);
+    }
+
+    template <class Enc = Utf8>
+    inline size_t countCps(const char8_t* x)
+    {
+        std::basic_string_view sv(x);
+        return countCps<decltype(sv), Enc>(sv);
     }
 
     ///
@@ -471,14 +508,12 @@ namespace mojibake {
         return isValid<decltype(sv), Enc>(sv);
     }
 
-#if __cplusplus >= 202002L
     template <class Enc = Utf8>
     inline bool isValid(const char8_t* x)
     {
         std::basic_string_view sv(x);
         return isValid<decltype(sv), Enc>(sv);
     }
-#endif
 
     ///
     /// Simple case fold
