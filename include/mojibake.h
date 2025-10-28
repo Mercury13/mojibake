@@ -2,7 +2,7 @@
 
 ///
 ///  MOJIBAKE
-///    simple C++17 Unicode conversion library
+///    simple C++20 Unicode conversion library
 ///
 ///  LICENSE: MIT
 ///
@@ -15,6 +15,7 @@
 
 namespace mojibake {
 
+    // Unsigned, to disable warnings of newer CLang
     constexpr unsigned SURROGATE_MIN = 0xD800;
     constexpr unsigned SURROGATE_MAX = 0xDFFF;
     constexpr unsigned SURROGATE_LO_MIN = SURROGATE_MIN;
