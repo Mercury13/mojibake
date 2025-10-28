@@ -58,10 +58,10 @@ namespace mojibake {
     }
 
     enum class Event {
-        CODE,       // UTF-8/32, bad character code, or too long sequence. Ptr = START
-        BYTE_START, // UTF-8/16, bad starting byte/word. Ptr obvious
-        BYTE_NEXT,  // UTF-8/16, bad any byte/word except start. Ptr = BAD
-        END,        // UTF-8/16, code sequence abruptly ended. Ptr = START
+        CODE,       // UTF-8/32, bad character code, or too long sequence. Place = sequence start
+        BYTE_START, // UTF-8/16, bad starting byte/word. Place obvious
+        BYTE_NEXT,  // UTF-8/16, bad any byte/word except start. Place = bad unit
+        END,        // UTF-8/16, code sequence abruptly ended. Place = sequence start
     };
 
     namespace handler {
@@ -76,7 +76,7 @@ namespace mojibake {
         /// • accept two params: place and event
         /// • return code point or RET_SKIP, maybe with FG_HALT.
         ///
-        /// Place/event arhuments vary between serialization types, and…
+        /// Place/event arguments vary between serialization types, and…
         /// • [U32] every bad codepoint → CODE
         /// • [U8/16] implementation-dependent, but…
         ///   • [U8] surrogate/high but well-serialized → CODE
@@ -96,7 +96,6 @@ namespace mojibake {
         class Skip final {
         public:
             inline char32_t operator () (
-
                     [[maybe_unused]] It place,
                     [[maybe_unused]] Event event) const noexcept { return RET_SKIP; }
         };  // class Skip
