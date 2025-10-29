@@ -147,6 +147,8 @@ namespace mojibake {
 
     /// Counts # of VALID codepoints in [beg, end)
     /// All invalid codepoints are skipped as in toS functions
+    /// @warning  As copyQ writes a mojibake (FFFD) instead of every bad CP,
+    ///           countCps == toS.length <= toQ.length
     template <class It,
               class Enc = typename detail::ItUtfTraits<It>::Enc,
               class = std::void_t<typename std::iterator_traits<It>::value_type>>
@@ -155,6 +157,8 @@ namespace mojibake {
 
     /// Counts # of VALID codepoints in x
     /// All invalid codepoints are skipped as in toS functions
+    /// @warning  As copyQ writes a mojibake (FFFD) instead of every bad CP,
+    ///           countCps == toS.length <= toQ.length
     template <class From,
               class Enc = typename detail::ContUtfTraits<From>::Enc>
     inline size_t countCps(const From& x)
@@ -163,6 +167,10 @@ namespace mojibake {
         return detail::ItEnc<It, Enc>::countCps(std::begin(x), std::end(x));
     }
 
+    /// Counts # of VALID codepoints in x
+    /// All invalid codepoints are skipped as in toS functions
+    /// @warning  As copyQ writes a mojibake (FFFD) instead of every bad CP,
+    ///           countCps == toS.length <= toQ.length
     template <class Enc = Utf32>
     inline size_t countCps(const char32_t* x)
     {
@@ -170,6 +178,10 @@ namespace mojibake {
         return countCps<decltype(sv), Enc>(sv);
     }
 
+    /// Counts # of VALID codepoints in x
+    /// All invalid codepoints are skipped as in toS functions
+    /// @warning  As copyQ writes a mojibake (FFFD) instead of every bad CP,
+    ///           countCps == toS.length <= toQ.length
     template <class Enc = Utf16>
     inline size_t countCps(const char16_t* x)
     {
@@ -177,6 +189,10 @@ namespace mojibake {
         return countCps<decltype(sv), Enc>(sv);
     }
 
+    /// Counts # of VALID codepoints in x
+    /// All invalid codepoints are skipped as in toS functions
+    /// @warning  As copyQ writes a mojibake (FFFD) instead of every bad CP,
+    ///           countCps == toS.length <= toQ.length
     template <class Enc = typename detail::LenTraits<sizeof(wchar_t)>::Enc>
     inline size_t countCps(const wchar_t* x)
     {
@@ -184,6 +200,10 @@ namespace mojibake {
         return countCps<decltype(sv), Enc>(sv);
     }
 
+    /// Counts # of VALID codepoints in x
+    /// All invalid codepoints are skipped as in toS functions
+    /// @warning  As copyQ writes a mojibake (FFFD) instead of every bad CP,
+    ///           countCps == toS.length <= toQ.length
     template <class Enc = Utf8>
     inline size_t countCps(const char* x)
     {
@@ -191,6 +211,10 @@ namespace mojibake {
         return countCps<decltype(sv), Enc>(sv);
     }
 
+    /// Counts # of VALID codepoints in x
+    /// All invalid codepoints are skipped as in toS functions
+    /// @warning  As copyQ writes a mojibake (FFFD) instead of every bad CP,
+    ///           countCps == toS.length <= toQ.length
     template <class Enc = Utf8>
     inline size_t countCps(const char8_t* x)
     {
