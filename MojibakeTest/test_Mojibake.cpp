@@ -2489,6 +2489,9 @@ TEST (Error, Uu8EightyByte2)
 ///// mojibake::simpleCaseFold /////////////////////////////////////////////////
 
 
+///
+/// Single-char version, simple workability
+///
 TEST (SimpleCaseFold, SomeChars)
 {
     // Missing
@@ -2512,6 +2515,10 @@ TEST (SimpleCaseFold, SomeChars)
 }
 
 
+///
+/// Simple workability on (container)→container
+/// We won’t test all combos, but at least all inputs and all outputs
+///
 TEST (SimpleCaseFold, Container)
 {
     std::string_view input = "\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
@@ -2520,6 +2527,9 @@ TEST (SimpleCaseFold, Container)
 }
 
 
+///
+/// Same, char8_t version
+///
 TEST (SimpleCaseFold, ContainerUu8)
 {
     std::u8string_view input = u8"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
@@ -2528,20 +2538,26 @@ TEST (SimpleCaseFold, ContainerUu8)
 }
 
 
+///
+/// Simple workability on (container, container)
+///
 TEST (SimpleCaseFold, Container2)
 {
     std::string_view input = "\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
     std::u16string r;
-    mojibake::simpleCaseFold<std::u16string>(input, r);
+    mojibake::simpleCaseFold(input, r);
     EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
 }
 
 
+///
+/// Same, char8_t version
+///
 TEST (SimpleCaseFold, Container2Uu8)
 {
     std::u8string_view input = u8"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
     std::u16string r;
-    mojibake::simpleCaseFold<std::u16string>(input, r);
+    mojibake::simpleCaseFold(input, r);
     EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
 }
 
@@ -2549,50 +2565,215 @@ TEST (SimpleCaseFold, Container2Uu8)
 TEST (SimpleCaseFold, ContainerU16)
 {
     std::u16string_view input = u"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
-    auto r = mojibake::simpleCaseFold<std::u16string>(input);
-    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+    auto r = mojibake::simpleCaseFold<std::u8string>(input);
+    EXPECT_EQ(u8"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
 }
 
 
 TEST (SimpleCaseFold, Container2U16)
 {
     std::u16string_view input = u"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
-    std::u16string r;
-    mojibake::simpleCaseFold<std::u16string>(input, r);
-    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+    std::u8string r;
+    mojibake::simpleCaseFold(input, r);
+    EXPECT_EQ(u8"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
 }
 
 
 TEST (SimpleCaseFold, ContainerU32)
 {
     std::u32string_view input = U"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
-    auto r = mojibake::simpleCaseFold<std::u16string>(input);
-    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+    auto r = mojibake::simpleCaseFold<std::string>(input);
+    EXPECT_EQ("\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
 }
 
 
 TEST (SimpleCaseFold, Container2U32)
 {
     std::u32string_view input = U"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
-    std::u16string r;
-    mojibake::simpleCaseFold<std::u16string>(input, r);
-    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+    std::string r;
+    mojibake::simpleCaseFold(input, r);
+    EXPECT_EQ("\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
 }
 
 
+///
+/// Simple workability on const char* → container
+///
 TEST (SimpleCaseFold, ConstChar)
 {
-    const char* input = "\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
-    auto r = mojibake::simpleCaseFold<std::u16string>(input);
-    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+    const char* input = "\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940" "\0" "ABC";
+    auto r = mojibake::simpleCaseFold<std::u32string>(input);
+    EXPECT_EQ(U"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
 }
 
 
+///
+/// Same, char8_t
+///
 TEST (SimpleCaseFold, ConstCharUu8)
 {
-    const char8_t* input = u8"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940";
-    auto r = mojibake::simpleCaseFold<std::u16string>(input);
-    EXPECT_EQ(u"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+    const char8_t* input = u8"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940" "\0" "ABC";
+    auto r = mojibake::simpleCaseFold<std::u32string>(input);
+    EXPECT_EQ(U"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+}
+
+
+///
+/// Same, char16_t
+///
+TEST (SimpleCaseFold, ConstCharUtf16)
+{
+    const char16_t* input = u"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940" "\0" "ABC";
+    auto r = mojibake::simpleCaseFold<std::u32string>(input);
+    EXPECT_EQ(U"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+}
+
+
+///
+/// Same, char32_t
+///
+TEST (SimpleCaseFold, ConstCharUtf32)
+{
+    const char32_t* input = U"\x00" "q" "\u047E" "\u0C9B" "\u1FAC" "\uABAC" "\U0001E90B" "\U0001E93F" "\U0001E940" "\0" "ABC";
+    auto r = mojibake::simpleCaseFold<std::u32string>(input);
+    EXPECT_EQ(U"\u0000" "q" "\u047F" "\u0C9B" "\u1FA4" "\u13DC" "\u1E92D" "\u1E93F" "\u1E940", r);
+}
+
+
+///
+///  Test characters from various Unicode blocks
+///  Sorry, also another concept: untested in/out combo U8→U32
+///
+TEST (SimpleCaseFold, Unicode17_Part1)
+{
+    std::string_view input =
+            "abcDEF"    // basic Latn
+            "{|}"       // untouched
+            "ÀÁÂëìí"    // Latn-1
+            "µ"         // from Latn-1, case-folded to Greek Mu
+            "ĀăĔğ"      // Latn A
+            "ƀƠƢ"       // Latn B
+            "ɫ"         // nice letter: capital in Latn C, small in IPA
+            "ʹ"         // untouched
+            "ΊΜκϏ"      // Grek
+            "ϵ"         // math symbol, case-folded to normal epsilon
+            "Ϣϥ"        // Copt from Grek block
+            "ЀЖлѕ"      // Cyrl
+            "ԀԃԤ"       // Cyrl+
+            "ԱԶն"       // Armn
+            "\u05D3"    // Hebr, untouched (by code due to RTL)
+            "Ⴃდ"        // Geor: 2 set of case pairs. Asomtavruli → Nuskhuri, Mkhedruli → untouched
+            "ᄁ"         // Hang, unicameral
+            "ᎩᎲᏻ"       // Cher: only a few smalls here, sm→CAP for historical reasons
+            "ᐂ"         // Cans, unicameral
+            "\u1C81\u1C89" // Cyrl C (by code due to novelty)
+                    // 1st case-folded to normal Cyrl char, 2nd is new U16
+            "Დ"         // Geor ex: Mtavruli → Mkhedruli (present in W10)
+            ;
+    std::u32string_view expected = U""
+            "abcdef" "{|}" "àáâëìí"
+            "μ" "āăĕğ" "ƀơƣ"
+            "ɫ" "ʹ" "ίμκϗ"
+            "ε" "ϣϥ" "ѐжлѕ"
+            "ԁԃԥ" "ազն" "\u05D3"
+            "ⴃდ" "ᄁ" "ᎩᎲᏳ"
+            "ᐂ" "д\u1C8A" "დ";
+    std::u32string actual = mojibake::simpleCaseFold<std::u32string>(input);
+    EXPECT_EQ(expected, actual);
+}
+
+
+///
+///  Test characters from various Unicode blocks, part 3
+///  Sorry, also another concept: untested in/out combo U32→U16
+///
+TEST (SimpleCaseFold, Unicode17_Part3)
+{
+    std::u32string_view input = U""
+            "ﬂ"         // Ligature, only has advanced case fold
+            "ﬅ"         // Ligature, has simple case fold to a nearby thing
+            "Ａｂ"        // Latn fullwidth, a separate case pair
+            "\U00010002" // Linb, unicameral
+            "𐐀𐐂𐐭"        // Dsrt
+            "\U00010451" // Shaw, unicameral
+            "𐒰𐒲𐓥"        // Osge
+            "\U0001050A" // Elba, unicameral
+            "\U00010570\U00010584\U000105B5" // Vith
+            "\U000105CB" // Todr, unicameral
+            "\U00010C80\U00010C94\U00010CEE" // Hung
+            "\U00010D14" // Rohg, unicameral
+            "\U00010D50\U00010D5B\U00010D7D" // Gara
+            "\U0001180A" // Dogr, unicameral
+            "\U000118A0\U000118AC\U000118DE" // Wara
+            ;
+    std::u16string_view expected = u""
+            "ﬂ" "ﬆ" "ａｂ"
+            "\U00010002" "𐐨𐐪𐐭" "\U00010451"
+            "𐓘𐓚𐓥" "\U0001050A" "\U00010597\U000105AB\U000105B5"
+            "\U000105CB" "\U00010CC0\U00010CD4\U00010CEE" "\U00010D14"
+            "\U00010D70\U00010D7B\U00010D7D" "\U0001180A"
+            "\U000118C0\U000118CC\U000118DE";
+    std::u16string actual = mojibake::simpleCaseFold<std::u16string>(input);
+    EXPECT_EQ(expected, actual);
+}
+
+
+///
+///  Test characters from various Unicode blocks, part 4
+///
+TEST (SimpleCaseFold, Unicode17_Part4)
+{
+    std::u16string_view input = u""
+            "\U00016D43" // Krai, unicameral
+            "\U00016E40\U00016E5E\U00016E74" // Medf
+            "\U00016EA0\U00016EB8\U00016EC4" // Berf
+            "\U00016F02" // Plrd, unicameral
+            ;
+    std::string_view expected =
+            "\U00016D43"
+            "\U00016E60\U00016E7E\U00016E74"
+            "\U00016EBB\U00016ED3\U00016EC4"
+            "\U00016F02";
+    std::string actual = mojibake::simpleCaseFold<std::string>(input);
+    EXPECT_EQ(expected, actual);
+}
+
+
+///
+///  Test characters from various Unicode blocks, part 2
+///  Sorry, also another concept: untested in/out combo U16→U32
+///
+TEST (SimpleCaseFold, Unicode17_Part2)
+{
+    std::u16string_view input = u""
+            "ᴰᴲ"        // Phonetic, they don’t have small
+            "ᶋ"         // Phonetic+, small and palatal hook (clearly phonetic)
+            "ḀḃḬḵ"      // Latn++ (Vietnam)
+            "ἀἊὙ"       // Grek+
+            "⭘"         // Some geometry
+            "\u2C00\u2C02\u2C3C" // Glag, codes because they don’t display right on my comp
+            "ⱠⱩⱬ"       // Latn C
+            "ⱢⱭ"        // Same, small are in IPA
+            "ⲀⲂⲕ"       // Copt
+            "ⴃ"         // Geor supp: Nuskhuri, untouched
+            "ⴼ"         // Tfng, unicameral
+            "ⶊ"         // Ethi, unicameral
+            "ꀁ"         // Yiii, unicameral
+            "ꙀꙋꙬꙮ"      // Cyrl B
+            "ꜢꜼꝍ"       // Latn D
+            "Ᵹ"         // Nice letter from Latn D case-folded elsewhere
+            "ꡁ"         // Phag, unicameral
+            "ꮃꮒ"        // Cher, case-folded to capital for historical reasons
+            ;
+    std::u32string_view expected = U""
+            "ᴰᴲ" "ᶋ" "ḁḃḭḵ"
+            "ἀἂὑ" "⭘" "\u2C30\u2C32\u2C3C"
+            "ⱡⱪⱬ" "ɫɑ" "ⲁⲃⲕ"
+            "ⴃ" "ⴼ" "ⶊ"
+            "ꀁ" "ꙁꙋꙭꙮ" "ꜣꜽꝍ"
+            "ᵹ" "ꡁ" "ᎳᏂ";
+    std::u32string actual = mojibake::simpleCaseFold<std::u32string>(input);
+    EXPECT_EQ(expected, actual);
 }
 
 
