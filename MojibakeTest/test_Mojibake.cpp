@@ -2684,6 +2684,44 @@ TEST (SimpleCaseFold, Unicode17_Part1)
 
 
 ///
+///  Test characters from various Unicode blocks, part 2
+///  Sorry, also another concept: untested in/out combo U16→U32
+///
+TEST (SimpleCaseFold, Unicode17_Part2)
+{
+    std::u16string_view input = u""
+            "ᴰᴲ"        // Phonetic, they don’t have small
+            "ᶋ"         // Phonetic+, small and palatal hook (clearly phonetic)
+            "ḀḃḬḵ"      // Latn++ (Vietnam)
+            "ἀἊὙ"       // Grek+
+            "⭘"         // Some geometry
+            "\u2C00\u2C02\u2C3C" // Glag, codes because they don’t display right on my comp
+            "ⱠⱩⱬ"       // Latn C
+            "ⱢⱭ"        // Same, small are in IPA
+            "ⲀⲂⲕ"       // Copt
+            "ⴃ"         // Geor supp: Nuskhuri, untouched
+            "ⴼ"         // Tfng, unicameral
+            "ⶊ"         // Ethi, unicameral
+            "ꀁ"         // Yiii, unicameral
+            "ꙀꙋꙬꙮ"      // Cyrl B
+            "ꜢꜼꝍ"       // Latn D
+            "Ᵹ"         // Nice letter from Latn D case-folded elsewhere
+            "ꡁ"         // Phag, unicameral
+            "ꮃꮒ"        // Cher, case-folded to capital for historical reasons
+            ;
+    std::u32string_view expected = U""
+            "ᴰᴲ" "ᶋ" "ḁḃḭḵ"
+            "ἀἂὑ" "⭘" "\u2C30\u2C32\u2C3C"
+            "ⱡⱪⱬ" "ɫɑ" "ⲁⲃⲕ"
+            "ⴃ" "ⴼ" "ⶊ"
+            "ꀁ" "ꙁꙋꙭꙮ" "ꜣꜽꝍ"
+            "ᵹ" "ꡁ" "ᎳᏂ";
+    std::u32string actual = mojibake::simpleCaseFold<std::u32string>(input);
+    EXPECT_EQ(expected, actual);
+}
+
+
+///
 ///  Test characters from various Unicode blocks, part 3
 ///  Sorry, also another concept: untested in/out combo U32→U16
 ///
@@ -2728,51 +2766,25 @@ TEST (SimpleCaseFold, Unicode17_Part4)
             "\U00016E40\U00016E5E\U00016E74" // Medf
             "\U00016EA0\U00016EB8\U00016EC4" // Berf
             "\U00016F02" // Plrd, unicameral
+            "\U0001E8C3" // Mend, unicameral
+            "\U0001E900\U0001E921\U0001E934" // Adlm
+            "\U0003347F" // The last known CJK ideograph as of U17, surely beyond table’s range
+            "\U000E01EF" // The last known character as of U17 (variation selector)
+            "\u0345"     // some nice Greek umlaut case-folded to ι
+            "qweRTY"     // again simple Latn
             ;
     std::string_view expected =
             "\U00016D43"
             "\U00016E60\U00016E7E\U00016E74"
             "\U00016EBB\U00016ED3\U00016EC4"
-            "\U00016F02";
+            "\U00016F02"
+            "\U0001E8C3"
+            "\U0001E922\U0001E943\U0001E934"
+            "\U0003347F"
+            "\U000E01EF"
+            "ι"
+            "qwerty";
     std::string actual = mojibake::simpleCaseFold<std::string>(input);
-    EXPECT_EQ(expected, actual);
-}
-
-
-///
-///  Test characters from various Unicode blocks, part 2
-///  Sorry, also another concept: untested in/out combo U16→U32
-///
-TEST (SimpleCaseFold, Unicode17_Part2)
-{
-    std::u16string_view input = u""
-            "ᴰᴲ"        // Phonetic, they don’t have small
-            "ᶋ"         // Phonetic+, small and palatal hook (clearly phonetic)
-            "ḀḃḬḵ"      // Latn++ (Vietnam)
-            "ἀἊὙ"       // Grek+
-            "⭘"         // Some geometry
-            "\u2C00\u2C02\u2C3C" // Glag, codes because they don’t display right on my comp
-            "ⱠⱩⱬ"       // Latn C
-            "ⱢⱭ"        // Same, small are in IPA
-            "ⲀⲂⲕ"       // Copt
-            "ⴃ"         // Geor supp: Nuskhuri, untouched
-            "ⴼ"         // Tfng, unicameral
-            "ⶊ"         // Ethi, unicameral
-            "ꀁ"         // Yiii, unicameral
-            "ꙀꙋꙬꙮ"      // Cyrl B
-            "ꜢꜼꝍ"       // Latn D
-            "Ᵹ"         // Nice letter from Latn D case-folded elsewhere
-            "ꡁ"         // Phag, unicameral
-            "ꮃꮒ"        // Cher, case-folded to capital for historical reasons
-            ;
-    std::u32string_view expected = U""
-            "ᴰᴲ" "ᶋ" "ḁḃḭḵ"
-            "ἀἂὑ" "⭘" "\u2C30\u2C32\u2C3C"
-            "ⱡⱪⱬ" "ɫɑ" "ⲁⲃⲕ"
-            "ⴃ" "ⴼ" "ⶊ"
-            "ꀁ" "ꙁꙋꙭꙮ" "ꜣꜽꝍ"
-            "ᵹ" "ꡁ" "ᎳᏂ";
-    std::u32string actual = mojibake::simpleCaseFold<std::u32string>(input);
     EXPECT_EQ(expected, actual);
 }
 
