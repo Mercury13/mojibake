@@ -258,7 +258,7 @@ namespace mojibake {
     }
 
     ///
-    /// Copies data to another, SKIPPING MOJIBAKE
+    /// Copies data to another, SKIPPING BAD DATA
     /// So no mojibake handler
     ///
     template <class It1, class It2,
@@ -290,7 +290,7 @@ namespace mojibake {
     }
 
     ///
-    /// Copies data to another, WRITING MOJIBAKE
+    /// Copies data to another, WRITING U+FFFD in place of all bad data
     /// So no mojibake handler
     ///
     template <class It1, class It2,
@@ -322,7 +322,7 @@ namespace mojibake {
     }
 
     ///
-    /// Copies data to another, WRITING MOJIBAKE AND HALTING
+    /// Copies data to another, WRITING U+FFFD AND HALTING
     /// So no mojibake handler
     ///
     template <class It1, class It2,
