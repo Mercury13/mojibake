@@ -1483,6 +1483,37 @@ TEST (IsValid, Utf8Good)
 }
 
 
+///
+/// …char8_t
+///
+TEST (IsValid, Uu8Good)
+{
+    std::u8string_view s = u8"abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
+///
+/// Good UTF-8 const char*, prereqs
+///
+TEST (IsValid, Utf8ConstCharPrereq)
+{
+    // The only correct way to write string with #0
+    auto s = "abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85" "\0" "\x80\x80\x80"sv;
+    EXPECT_FALSE(mojibake::isValid(s));
+}
+
+
+///
+/// Good UTF-8 const char*
+///
+TEST (IsValid, Utf8ConstChar)
+{
+    const char* s = "abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85" "\0" "\x80\x80\x80";
+    EXPECT_TRUE(mojibake::isValid(s));
+}
+
+
 /////
 /////  mojibake::isValid     ///////////////////////////////////////////////////
 /////  Difficulties of UTF-8 ///////////////////////////////////////////////////
