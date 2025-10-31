@@ -214,6 +214,27 @@ TEST (Put, Simple8)
 
 
 ///
+///  Same, char8_t
+///
+TEST (Put, SimpleUu8)
+{
+    char8_t c[30];
+    char8_t* start = c;
+    char8_t* it = start;
+    mojibake::put(it, 'a');
+    mojibake::put(it, 'b');
+    mojibake::put(it, 'c');
+    mojibake::put(it, 0x40B);       // 2-byte cp
+    mojibake::put(it, 0x1234);      // 3-byte cp
+    mojibake::put(it, 0x12345);     // 4-byte cp
+
+    std::basic_string_view sv(start, it - start);
+    EXPECT_EQ(12u, sv.length());
+    EXPECT_EQ(u8"abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", sv);
+}
+
+
+///
 ///  Utf8CallIterator
 ///
 TEST (Put, CallIterator)
@@ -232,6 +253,28 @@ TEST (Put, CallIterator)
 
     EXPECT_EQ(12u, s.length());
     EXPECT_EQ("abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", s);
+}
+
+
+///
+///  Utf8CallIterator
+///
+TEST (Put, Uu8CallIterator)
+{
+    std::u8string s;
+
+    auto func = [&s](auto c) { s.push_back(c); };
+    mojibake::Utf8CallIterator it(func);
+
+    mojibake::put(it, 'a');
+    mojibake::put(it, 'b');
+    mojibake::put(it, 'c');
+    mojibake::put(it, 0x40B);       // 2-byte cp
+    mojibake::put(it, 0x1234);      // 3-byte cp
+    mojibake::put(it, 0x12345);     // 4-byte cp
+
+    EXPECT_EQ(12u, s.length());
+    EXPECT_EQ(u8"abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85", s);
 }
 
 
@@ -321,6 +364,20 @@ TEST (Copy, Utf8Normal)
     std::string_view s = "abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85";
     char32_t buf[30];
     using NoM = mojibake::handler::Skip<std::string_view::const_iterator>;
+    auto end = mojibake::copy(s.begin(), s.end(), buf, NoM());
+    std::basic_string_view r (buf, end - buf);
+    EXPECT_EQ(U"abc\u040B\u1234\U00012345", r);
+}
+
+
+///
+/// …char8_t
+///
+TEST (Copy, Uu8Normal)
+{
+    std::u8string_view s = u8"abc" "\xD0\x8B" "\xE1\x88\xB4" "\xF0\x92\x8D\x85";
+    char32_t buf[30];
+    using NoM = mojibake::handler::Skip<std::u8string_view::const_iterator>;
     auto end = mojibake::copy(s.begin(), s.end(), buf, NoM());
     std::basic_string_view r (buf, end - buf);
     EXPECT_EQ(U"abc\u040B\u1234\U00012345", r);
