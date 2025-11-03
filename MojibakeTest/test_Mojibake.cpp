@@ -2735,28 +2735,28 @@ TEST (SimpleCaseFold, ConstCharUtf32)
 TEST (SimpleCaseFold, Unicode17_Part1)
 {
     std::string_view input =
-            "abcDEF"    // basic Latn
+            "abcDEF"    // basic Latin
             "{|}"       // untouched
-            "ÀÁÂëìí"    // Latn-1
-            "µ"         // from Latn-1, case-folded to Greek Mu
-            "ĀăĔğ"      // Latn A
-            "ƀƠƢ"       // Latn B
+            "ÀÁÂëìí"    // Latin-1
+            "µ"         // from Latin-1, case-folded to Greek Mu
+            "ĀăĔğ"      // Latin A
+            "ƀƠƢ"       // Latin B
             "ɫ"         // nice letter: capital in Latn C, small in IPA
             "ʹ"         // untouched
-            "ΊΜκϏ"      // Grek
+            "ΊΜκϏ"      // Greek
             "ϵ"         // math symbol, case-folded to normal epsilon
-            "Ϣϥ"        // Copt from Grek block
-            "ЀЖлѕ"      // Cyrl
-            "ԀԃԤ"       // Cyrl+
-            "ԱԶն"       // Armn
-            "\u05D3"    // Hebr, untouched (by code due to RTL)
-            "Ⴃდ"        // Geor: 2 set of case pairs. Asomtavruli → Nuskhuri, Mkhedruli → untouched
-            "ᄁ"         // Hang, unicameral
-            "ᎩᎲᏻ"       // Cher: only a few smalls here, sm→CAP for historical reasons
-            "ᐂ"         // Cans, unicameral
-            "\u1C81\u1C89" // Cyrl C (by code due to novelty)
+            "Ϣϥ"        // Coptic from Greek block
+            "ЀЖлѕ"      // Cyrillic
+            "ԀԃԤ"       // Cyrillic+
+            "ԱԶն"       // Armenian
+            "\u05D3"    // Hebrew, untouched (by code due to RTL)
+            "Ⴃდ"        // Georgian: 2 set of case pairs. Asomtavruli → Nuskhuri, Mkhedruli → untouched
+            "ᄁ"         // Hangul, unicameral
+            "ᎩᎲᏻ"       // Cherokee: only a few smalls here, sm→CAP for historical reasons
+            "ᐂ"         // Canadian, unicameral
+            "\u1C81\u1C89" // Cyrillic C (by code due to novelty)
                     // 1st case-folded to normal Cyrl char, 2nd is new U16
-            "Დ"         // Geor ex: Mtavruli → Mkhedruli (present in W10)
+            "Დ"         // Georgian ex: Mtavruli → Mkhedruli (present in W10)
             ;
     std::u32string_view expected = U""
             "abcdef" "{|}" "àáâëìí"
@@ -2780,22 +2780,22 @@ TEST (SimpleCaseFold, Unicode17_Part2)
     std::u16string_view input = u""
             "ᴰᴲ"        // Phonetic, they don’t have small
             "ᶋ"         // Phonetic+, small and palatal hook (clearly phonetic)
-            "ḀḃḬḵ"      // Latn++ (Vietnam)
-            "ἀἊὙ"       // Grek+
+            "ḀḃḬḵ"      // Latin++ (Vietnam)
+            "ἀἊὙ"       // Greek+
             "⭘"         // Some geometry
             "\u2C00\u2C02\u2C3C" // Glag, codes because they don’t display right on my comp
-            "ⱠⱩⱬ"       // Latn C
+            "ⱠⱩⱬ"       // Latin C
             "ⱢⱭ"        // Same, small are in IPA
-            "ⲀⲂⲕ"       // Copt
-            "ⴃ"         // Geor supp: Nuskhuri, untouched
-            "ⴼ"         // Tfng, unicameral
-            "ⶊ"         // Ethi, unicameral
-            "ꀁ"         // Yiii, unicameral
-            "ꙀꙋꙬꙮ"      // Cyrl B
-            "ꜢꜼꝍ"       // Latn D
-            "Ᵹ"         // Nice letter from Latn D case-folded elsewhere
-            "ꡁ"         // Phag, unicameral
-            "ꮃꮒ"        // Cher, case-folded to capital for historical reasons
+            "ⲀⲂⲕ"       // Coptic
+            "ⴃ"         // Georgian supp: Nuskhuri, untouched
+            "ⴼ"         // Tifinagh, unicameral
+            "ⶊ"         // Ethiopic, unicameral
+            "ꀁ"         // Yi, unicameral
+            "ꙀꙋꙬꙮ"      // Cyrillic B
+            "ꜢꜼꝍ"       // Latin D
+            "Ᵹ"         // Nice letter from Latin D case-folded elsewhere
+            "ꡁ"         // Phags-Pa, unicameral
+            "ꮃꮒ"        // Cherokee, case-folded to capital for historical reasons
             ;
     std::u32string_view expected = U""
             "ᴰᴲ" "ᶋ" "ḁḃḭḵ"
@@ -2818,19 +2818,19 @@ TEST (SimpleCaseFold, Unicode17_Part3)
     std::u32string_view input = U""
             "ﬂ"         // Ligature, only has advanced case fold
             "ﬅ"         // Ligature, has simple case fold to a nearby thing
-            "Ａｂ"        // Latn fullwidth, a separate case pair
-            "\U00010002" // Linb, unicameral
-            "𐐀𐐂𐐭"        // Dsrt
-            "\U00010451" // Shaw, unicameral
-            "𐒰𐒲𐓥"        // Osge
-            "\U0001050A" // Elba, unicameral
-            "\U00010570\U00010584\U000105B5" // Vith
-            "\U000105CB" // Todr, unicameral
-            "\U00010C80\U00010C94\U00010CEE" // Hung
-            "\U00010D14" // Rohg, unicameral
-            "\U00010D50\U00010D5B\U00010D7D" // Gara
-            "\U0001180A" // Dogr, unicameral
-            "\U000118A0\U000118AC\U000118DE" // Wara
+            "Ａｂ"        // Latin fullwidth, a separate case pair
+            "\U00010002" // LinearB, unicameral
+            "𐐀𐐂𐐭"        // Deseret
+            "\U00010451" // Shavian, unicameral
+            "𐒰𐒲𐓥"        // Osage
+            "\U0001050A" // Elbasan, unicameral
+            "\U00010570\U00010584\U000105B5" // Vithkuqi
+            "\U000105CB" // Todhri, unicameral
+            "\U00010C80\U00010C94\U00010CEE" // Hungarian
+            "\U00010D14" // Rohingya, unicameral
+            "\U00010D50\U00010D5B\U00010D7D" // Garay
+            "\U0001180A" // Dogra, unicameral
+            "\U000118A0\U000118AC\U000118DE" // Warang Citi
             ;
     std::u16string_view expected = u""
             "ﬂ" "ﬆ" "ａｂ"
@@ -2850,16 +2850,16 @@ TEST (SimpleCaseFold, Unicode17_Part3)
 TEST (SimpleCaseFold, Unicode17_Part4)
 {
     std::u16string_view input = u""
-            "\U00016D43" // Krai, unicameral
-            "\U00016E40\U00016E5E\U00016E74" // Medf
-            "\U00016EA0\U00016EB8\U00016EC4" // Berf
-            "\U00016F02" // Plrd, unicameral
-            "\U0001E8C3" // Mend, unicameral
-            "\U0001E900\U0001E921\U0001E934" // Adlm
+            "\U00016D43" // Kirat, unicameral
+            "\U00016E40\U00016E5E\U00016E74" // Medefaidrin
+            "\U00016EA0\U00016EB8\U00016EC4" // Beria
+            "\U00016F02" // Pollard Miao, unicameral
+            "\U0001E8C3" // Mende, unicameral
+            "\U0001E900\U0001E921\U0001E934" // Adlam
             "\U0003347F" // The last known CJK ideograph as of U17, surely beyond table’s range
             "\U000E01EF" // The last known character as of U17 (variation selector)
             "\u0345"     // some nice Greek umlaut case-folded to ι
-            "qweRTY"     // again simple Latn
+            "qweRTY"     // again simple Latin
             ;
     std::string_view expected =
             "\U00016D43"
